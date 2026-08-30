@@ -1,0 +1,11 @@
+{
+  "name": "IMMUNE — Microscopic Defense",
+  "short_name": "IMMUNE",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0f0305",
+  "theme_color": "#0f0305",
+  "description": "Microscopic bio-defense browser game with procedural soft-body physics."
+}

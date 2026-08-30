@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f0305">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>IMMUNE - Microscopic Defense</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css?v=20260830_15">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+
+    <!-- HUD Overlay (Minimalist Ultra-Slim Bio-Horizon) -->
+    <div id="hud" class="hud-layer hidden">
+      <header class="hud-top-bar">
+        <!-- 1. Left: Single-Row Player Vitality & Biomass Capsule -->
+        <div class="hud-bio-cell">
+          <div class="bio-cell-hp-group">
+            <div class="status-core-dot"></div>
+            <div class="hp-bar-wrapper">
+              <div class="hp-bar-bg">
+                <div id="hp-bar-fill" class="hp-bar-fill"></div>
+                <div id="hp-bar-ghost" class="hp-bar-ghost"></div>
+              </div>
+            </div>
+            <span id="hp-text" class="hp-text">100</span>
+          </div>
+
+          <div class="bio-divider"></div>
+
+          <div class="bio-cell-aux-group">
+            <!-- Inline Mass Counter -->
+            <div class="mass-tracker">
+              <div class="mass-micro-icon">●</div>
+              <span id="mass-text" class="mass-text">0/30</span>
+              <div class="mass-bar-track">
+                <div id="mass-segments-container" class="mass-segments-container"></div>
+                <div id="mass-cooldown-overlay" class="mass-cooldown-overlay"></div>
+              </div>
+              <span id="mass-label" class="mass-label sr-only">MASS</span>
+            </div>
+
+            <!-- Inline Surge CD -->
+            <div class="dash-cooldown-tracker">
+              <span class="surge-icon">⚡</span>
+              <div class="cd-bar-bg">
+                <div id="dash-cd-fill" class="cd-bar-fill"></div>
+              </div>
+              <span id="dash-cd-text" class="cd-status">READY</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Center: Non-Overlapping Host Vitality Horizon -->
+        <div id="host-vitality-container" class="hud-top-center host-vitality-container host-bar-hidden">
+          <div class="host-pulse-indicator"></div>
+          <span class="host-label">HOST</span>
+          <div class="host-bar-wrapper">
+            <div class="host-bar-bg">
+              <div id="host-bar-fill" class="host-bar-fill"></div>
+              <div class="host-bar-scanline"></div>
+            </div>
+          </div>
+          <span id="host-pct-text" class="host-pct-text">100%</span>
+        </div>
+
+        <!-- 3. Right: Threat & Sector Pills -->
+        <div class="hud-bio-sector">
+          <button id="wave-badge" class="wave-badge wave-badge-btn" title="Select Level (L)">
+            <svg class="badge-svg-icon dna-icon" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <path d="M4 4c4 4 12 4 16 0M4 20c4-4 12-4 16 0M4 12h16M7 7l10 10M7 17L17 7"/>
+            </svg>
+            <span class="badge-text">LVL 1/12</span>
+            <span class="badge-arrow">▾</span>
+          </button>
+          <div class="germ-count-wrapper">
+            <svg class="badge-svg-icon germ-svg-icon" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="5" fill="rgba(255, 51, 85, 0.25)"/>
+              <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.2 2.2M16.2 16.2l2.2 2.2M5.6 18.4l2.2-2.2M16.2 7.8l2.2-2.2"/>
+            </svg>
+            <span id="germ-count" class="germ-number">0/0</span>
+          </div>
+          <button id="btn-fullscreen" class="wave-badge fullscreen-badge-btn" title="Toggle Fullscreen (F)" aria-label="Toggle Fullscreen">
+            <svg class="badge-svg-icon fullscreen-svg-icon" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Desktop Controls Hint (Bottom-Center) -->
+      <div class="hud-bottom-center">
+        <div class="controls-hint">
+          <span class="key-tag">WASD</span> Move &nbsp;•&nbsp; 
+          <span class="key-tag">L-CLICK</span> Strike &nbsp;•&nbsp; 
+          <span class="key-tag">SPACE</span> Surge &nbsp;•&nbsp; 
+          <span class="key-tag">Q</span> Vent &nbsp;•&nbsp;
+          <span class="key-tag">L</span> Levels &nbsp;•&nbsp;
+          <span class="key-tag">F</span> Fullscreen
+        </div>
+      </div>
+    </div>
+
+    <!-- Level Intro Card (Quiet & Clean) -->
+    <div id="level-intro-card" class="level-intro-overlay hidden">
+      <div class="level-intro-box">
+        <div id="intro-act-name" class="intro-act-name">ACT I — SKIN &amp; TISSUE</div>
+        <div id="intro-level-title" class="intro-level-title">LEVEL 1: BACTERIAL INFECTION</div>
+        <div id="intro-objective-line" class="intro-objective-line">Bacterial colony detected in epidermal layer.</div>
+        <div class="intro-prompt">TAP SCREEN OR PRESS ANY KEY TO ENGAGE</div>
+      </div>
+    </div>
+
+    <!-- Level Complete Banner -->
+    <div id="level-complete-banner" class="level-complete-banner hidden">
+      <div class="complete-title">LEVEL CLEARED</div>
+      <div id="complete-level-name" class="complete-sub">ORGAN TISSUE SECURED</div>
+      <div id="complete-regen-tag" class="complete-regen-tag">+8% HOST VITALITY RECOVERED</div>
+    </div>
+
+    <!-- Level Failed / Containment Failed Banner -->
+    <div id="level-failed-banner" class="level-failed-banner hidden">
+      <div class="failed-title">CONTAINMENT FAILED</div>
+      <div id="failed-penalty-tag" class="failed-penalty-tag">-15% HOST VITALITY PENALTY</div>
+      <div class="failed-sub">REINITIALIZING DEFENSE SEQUENCE...</div>
+    </div>
+
+    <!-- Centered Respawn Banner -->
+    <div id="respawn-banner" class="respawn-banner">
+      <div class="respawn-title">REGENERATING</div>
+      <div class="respawn-sub">MARROW CELL DISPATCHED</div>
+      <div id="respawn-countdown" class="respawn-countdown"></div>
+    </div>
+
+    <!-- Modern Dynamic Mobile Touch Controls -->
+    <div id="touch-controls" class="touch-layer hidden">
+      <!-- Dynamic Floating Joystick Touch Zone (Left 55% of screen) -->
+      <div id="joystick-zone" class="joystick-zone">
+        <div id="joystick-base" class="joystick-base">
+          <div class="joystick-glow-ring"></div>
+          <div class="joystick-crosshair"></div>
+          <div id="joystick-knob" class="joystick-knob">
+            <div class="knob-core"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ergonomic Action Cluster (Bottom-Right Thumb Arc) -->
+      <div class="touch-action-cluster">
+        <!-- Vent Burst (Upper-left button in thumb arc) -->
+        <button id="touch-vent-btn" class="touch-btn vent-btn" aria-label="Vent Burst">
+          <div class="touch-btn-glow"></div>
+          <svg class="touch-ring-svg" viewBox="0 0 64 64">
+            <circle class="touch-ring-bg" cx="32" cy="32" r="28"/>
+            <circle id="touch-vent-ring" class="touch-ring-fill" cx="32" cy="32" r="28"/>
+          </svg>
+          <div class="touch-btn-content">
+            <svg class="btn-svg-glyph vent-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="3.5" fill="currentColor"/>
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M4.9 19.1l2.2-2.2M16.9 7.1l2.2-2.2"/>
+            </svg>
+            <span class="btn-title">VENT</span>
+            <span id="touch-vent-sub" class="btn-micro-badge">0/3</span>
+          </div>
+        </button>
+
+        <!-- Surge Dash (Upper-right button in thumb arc) -->
+        <button id="touch-dash-btn" class="touch-btn dash-btn" aria-label="Surge Dash">
+          <div class="touch-btn-glow"></div>
+          <svg class="touch-ring-svg" viewBox="0 0 64 64">
+            <circle class="touch-ring-bg" cx="32" cy="32" r="28"/>
+            <circle id="touch-dash-ring" class="touch-ring-fill" cx="32" cy="32" r="28"/>
+          </svg>
+          <div class="touch-btn-content">
+            <svg class="btn-svg-glyph surge-glyph" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M13 2.5L4 13.5h6.5L8.5 21.5l10.5-11h-6.5L14.5 2.5z"/>
+            </svg>
+            <span class="btn-title">SURGE</span>
+          </div>
+        </button>
+
+        <!-- Primary Strike (Large bottom-right anchor button) -->
+        <button id="touch-attack-btn" class="touch-btn attack-btn" aria-label="Pseudopod Strike">
+          <div class="touch-btn-glow"></div>
+          <div class="touch-btn-content">
+            <svg class="btn-svg-glyph strike-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 4.5L5 18.5M19 4.5l-4.5 0.5M19 4.5l-0.5 4.5"/>
+              <path d="M14.5 9.5l-2.5 2.5" opacity="0.6"/>
+              <circle cx="5" cy="19" r="2.2" fill="currentColor"/>
+            </svg>
+            <span class="btn-title">STRIKE</span>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Landscape Orientation Guard -->
+    <div id="orientation-guard" class="orientation-guard-overlay">
+      <div class="orientation-guard-box">
+        <div class="rotate-phone-anim">
+          <div class="rotate-phone-body">
+            <div class="rotate-phone-screen"></div>
+            <div class="rotate-phone-notch"></div>
+          </div>
+          <svg class="rotate-phone-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+        </div>
+        <span class="rotate-tag">MICROSCOPIC BATTLESPACE</span>
+        <h2 class="rotate-title">ROTATE DEVICE</h2>
+        <p class="rotate-desc">IMMUNE is engineered for landscape orientation.<br>Please rotate your phone horizontally to play.</p>
+      </div>
+    </div>
+
+    <!-- Start / Title Screen Modal -->
+    <div id="start-modal" class="modal-overlay active">
+      <div class="modal-card start-modal-card">
+        <div class="modal-body-layout">
+          <div class="modal-col-left">
+            <div class="title-logo">
+              <span class="logo-sub">MICROSCOPIC CELL DEFENSE</span>
+              <h1 class="logo-main">IMMUNE</h1>
+              <div class="logo-glow"></div>
+            </div>
+            <p class="tagline">Foreign pathogens have invaded the bloodstream.<br>Engulf, strike, and sterilize the threat before systemic failure.</p>
+            <div class="start-btn-group">
+              <button id="btn-start" class="btn-action primary-pulse">
+                <span>INITIALIZE DEFENSE</span>
+              </button>
+              <button id="btn-start-level-select" class="btn-action secondary-btn">
+                <span>SELECT LEVEL</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="modal-col-right">
+            <div class="modal-instructions">
+              <div class="instruction-row">
+                <span class="inst-key">MOVE</span>
+                <span class="inst-val">WASD / Virtual Stick</span>
+              </div>
+              <div class="instruction-row">
+                <span class="inst-key">STRIKE</span>
+                <span class="inst-val">Left Click / Strike Button</span>
+              </div>
+              <div class="instruction-row">
+                <span class="inst-key">SURGE</span>
+                <span class="inst-val">Spacebar / Surge Button</span>
+              </div>
+              <div class="instruction-row">
+                <span class="inst-key">VENT</span>
+                <span class="inst-val">Q Key / Vent Button</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Level Selector Modal -->
+    <div id="level-select-modal" class="modal-overlay hidden">
+      <div class="modal-card level-select-card">
+        <div class="modal-header-row">
+          <div class="level-select-title-wrap">
+            <span class="level-select-subtitle">DEPLOYMENT SECTOR</span>
+            <h2 class="modal-title level-select-title">SELECT LEVEL</h2>
+          </div>
+          <button id="btn-close-level-select" class="btn-close" aria-label="Close">✕</button>
+        </div>
+        <div class="act-header-tag">ACT I — SKIN &amp; TISSUE</div>
+        <div id="level-grid" class="level-grid">
+          <!-- Dynamically populated 12 level buttons -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Host Death Screen -->
+    <div id="host-death-screen" class="host-death-overlay hidden">
+      <div class="host-death-card">
+        <h1 class="host-death-title">THE HOST DID NOT SURVIVE</h1>
+        <div class="host-death-stats">
+          <div class="host-death-stat-row">
+            <span class="host-death-stat-label">LEVEL REACHED</span>
+            <span id="death-level-reached" class="host-death-stat-val">1</span>
+          </div>
+          <div class="host-death-stat-row">
+            <span class="host-death-stat-label">GERMS DESTROYED</span>
+            <span id="death-germs-killed" class="host-death-stat-val">0</span>
+          </div>
+        </div>
+        <div class="death-btn-group">
+          <button id="btn-host-restart" class="btn-host-restart">RESTART</button>
+          <button id="btn-death-level-select" class="btn-host-restart secondary-death-btn">SELECT LEVEL</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Victory Modal -->
+    <div id="victory-modal" class="modal-overlay hidden">
+      <div class="modal-card victory-card">
+        <div class="cell-shield-icon">🛡️</div>
+        <h2 class="modal-title victory-text">BODY CLEARED</h2>
+        <p class="modal-desc">All pathogenic organisms neutralized. Blood vessel sterilization complete!</p>
+        <div id="victory-stats" class="stats-preview"></div>
+        <div class="death-btn-group">
+          <button id="btn-play-again" class="btn-action victory-btn">
+            <span>PLAY AGAIN</span>
+          </button>
+          <button id="btn-victory-level-select" class="btn-action secondary-btn">
+            <span>SELECT LEVEL</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js?v=20260830_13"></script>
+</body>
+</html>

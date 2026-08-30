@@ -1,0 +1,245 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background-color: #242426;
+  font-family: 'Architects Daughter', 'Caveat', cursive, sans-serif;
+  color: #1a1a1a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  touch-action: none;
+}
+
+#game-container {
+  position: relative;
+  width: 100vw;
+  height: 100%;
+  height: 100dvh;
+  max-width: 1280px;
+  max-height: 720px;
+  background: #242426;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Fullscreen on phones/tablets and touch devices */
+@media (max-aspect-ratio: 16/9), (hover: none) and (pointer: coarse), (max-height: 600px) {
+  #game-container {
+    max-width: 100vw;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+}
+
+:fullscreen #game-container,
+#game-container:fullscreen {
+  max-width: 100vw;
+  max-height: 100dvh;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+#game-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: auto;
+  touch-action: none;
+}
+
+/* Touch Controls Overlay */
+.touch-controls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 20px calc(24px + env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-left));
+  z-index: 10;
+}
+
+.touch-controls.hidden {
+  display: none !important;
+}
+
+.touch-group {
+  display: flex;
+  gap: 14px;
+  pointer-events: auto;
+}
+
+.touch-btn {
+  width: 72px;
+  height: 72px;
+  background: rgba(251, 248, 235, 0.85);
+  border: 2.5px solid #222;
+  border-radius: 50%;
+  font-family: 'Permanent Marker', cursive, sans-serif;
+  color: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 2px 3px 0px rgba(0,0,0,0.8), inset 1px 1px 3px rgba(255,255,255,0.8);
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.05s ease, background-color 0.05s ease, box-shadow 0.05s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-btn .btn-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.touch-btn .btn-label {
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.touch-btn:active, .touch-btn.active {
+  transform: translate(2px, 2px) scale(0.95);
+  box-shadow: 0px 1px 0px rgba(0,0,0,0.8);
+  background: rgba(220, 215, 195, 0.95);
+}
+
+.attack-btn {
+  width: 82px;
+  height: 82px;
+  background: rgba(255, 235, 230, 0.9);
+  border-color: #8b0000;
+  color: #8b0000;
+}
+
+.attack-btn:active, .attack-btn.active {
+  background: rgba(255, 200, 190, 0.95);
+}
+
+.heavy-btn {
+  width: 76px;
+  height: 76px;
+  background: rgba(255, 243, 224, 0.9);
+  border-color: #e65100;
+  color: #e65100;
+}
+
+.heavy-btn:active, .heavy-btn.active {
+  background: rgba(255, 224, 178, 0.95);
+}
+
+.block-btn {
+  width: 76px;
+  height: 76px;
+  background: rgba(230, 245, 255, 0.9);
+  border-color: #0d47a1;
+  color: #0d47a1;
+}
+
+.block-btn:active, .block-btn.active {
+  background: rgba(190, 225, 255, 0.95);
+}
+
+.jump-btn {
+  width: 72px;
+  height: 72px;
+  background: rgba(240, 255, 240, 0.9);
+  border-color: #2e7d32;
+  color: #2e7d32;
+}
+
+.jump-btn:active, .jump-btn.active {
+  background: rgba(200, 245, 200, 0.95);
+}
+
+/* Notebook Hand-Drawn Buttons */
+.sketch-btn {
+  position: relative;
+  transform: rotate(calc(-1deg + 2deg * var(--rand, 0.5)));
+}
+
+/* Portrait Orientation Prompt Overlay */
+.portrait-warning {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(251, 248, 235, 0.97);
+  z-index: 100;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+  text-align: center;
+  pointer-events: auto;
+}
+
+@media (orientation: portrait) {
+  .portrait-warning {
+    display: flex;
+  }
+}
+
+.portrait-card {
+  max-width: 320px;
+  padding: 28px 20px;
+  border: 3px solid #111;
+  background: #fffdf5;
+  box-shadow: 4px 6px 0px rgba(0,0,0,0.85);
+  border-radius: 4px;
+  transform: rotate(-1deg);
+}
+
+.rotate-icon {
+  font-size: 42px;
+  margin-bottom: 12px;
+  animation: rotateDoodle 2.2s infinite ease-in-out;
+}
+
+@keyframes rotateDoodle {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(90deg); }
+}
+
+.rotate-title {
+  font-family: 'Permanent Marker', cursive, sans-serif;
+  font-size: 24px;
+  color: #8b0000;
+  margin-bottom: 8px;
+}
+
+.rotate-desc {
+  font-family: 'Architects Daughter', cursive, sans-serif;
+  font-size: 16px;
+  color: #333;
+  line-height: 1.4;
+}
+
+@media (min-width: 900px) and (hover: hover) {
+  /* On desktop with mouse/keyboard, hide touch controls completely */
+  .touch-controls {
+    display: none;
+  }
+}

@@ -26,6 +26,36 @@ const GAMES_DATABASE = [
     path: "mountain_runner/runner.html",
     thumbnail: "mountain_runner/mountain_runner_cover.png",
     featured: false
+  },
+  {
+    id: "stick-fight",
+    title: "StickFight: Notebook Duel",
+    description: "Fast-paced notebook sword duel featuring fluid procedural stickman animations and physics. Master combos, parries, clashes, and boss battles.",
+    category: "fighting",
+    players: "1 Player",
+    path: "StickFight/index.html",
+    thumbnail: "StickFight/stickfight_cover.png",
+    featured: true
+  },
+  {
+    id: "immune",
+    title: "IMMUNE",
+    description: "Defend the human body across 100 microscopic levels with soft-body physics, procedural fluid rendering, and adaptive cellular mutations.",
+    category: "action",
+    players: "1 Player",
+    path: "immune/index.html",
+    thumbnail: "immune/immune_cover.png",
+    featured: true
+  },
+  {
+    id: "overtime",
+    title: "OVERTIME",
+    description: "A tense psychological office survival horror game built in Godot. Navigate dark corridors during late-night overtime and escape the stalker.",
+    category: "horror",
+    players: "1 Player",
+    path: "OVERTIME/index.html",
+    thumbnail: "OVERTIME/overtime_cover.png",
+    featured: true
   }
 ];
 

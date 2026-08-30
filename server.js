@@ -2,7 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
 
 // Supported MIME types for web files, especially Godot Web exports (.wasm, .pck)
 const MIME_TYPES = {
@@ -24,14 +24,22 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
-    // Decode URI to handle folders/files with spaces in their names
-    let filePath = decodeURIComponent(req.url);
+    // Strip query strings/hashes and decode URI to handle spaces
+    let pathname = '/';
+    try {
+        const parsedUrl = new URL(req.url, 'http://localhost');
+        pathname = decodeURIComponent(parsedUrl.pathname);
+    } catch {
+        pathname = decodeURIComponent(req.url.split('?')[0].split('#')[0]);
+    }
+
+    let filePath = pathname;
     if (filePath === '/') {
         filePath = '/index.html';
     }
 
     // Resolve path and ensure directory-traversal protection
-    const absolutePath = path.resolve(path.join(__dirname, filePath));
+    let absolutePath = path.resolve(path.join(__dirname, filePath));
     if (!absolutePath.startsWith(__dirname)) {
         res.statusCode = 403;
         res.setHeader('Content-Type', 'text/plain');
@@ -40,11 +48,24 @@ const server = http.createServer((req, res) => {
     }
 
     fs.stat(absolutePath, (err, stats) => {
-        if (err || !stats.isFile()) {
+        if (err) {
             res.statusCode = 404;
             res.setHeader('Content-Type', 'text/plain');
             res.end('404 Not Found');
             return;
+        }
+
+        // If directory, check for index.html inside
+        if (stats.isDirectory()) {
+            const indexFilePath = path.join(absolutePath, 'index.html');
+            if (fs.existsSync(indexFilePath)) {
+                absolutePath = indexFilePath;
+            } else {
+                res.statusCode = 404;
+                res.setHeader('Content-Type', 'text/plain');
+                res.end('404 Not Found');
+                return;
+            }
         }
 
         const ext = path.extname(absolutePath).toLowerCase();
@@ -69,10 +90,27 @@ const server = http.createServer((req, res) => {
     });
 });
 
-server.listen(PORT, () => {
+server.on('listening', () => {
+    const address = server.address();
+    const boundPort = typeof address === 'string' ? address : address.port;
     console.log(`\n==================================================`);
     console.log(`🚀 Game Hub Local Server is up and running!`);
-    console.log(`👉 Open your browser at: http://localhost:${PORT}`);
+    console.log(`👉 Open your browser at: http://localhost:${boundPort}`);
     console.log(`==================================================\n`);
     console.log(`Press Ctrl+C in this command prompt to stop the server.`);
 });
+
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.warn(`⚠️ Port ${err.port} is already in use. Trying port ${err.port + 1}...`);
+        startServer(err.port + 1);
+    } else {
+        console.error('Server error:', err);
+    }
+});
+
+function startServer(portToTry) {
+    server.listen(portToTry);
+}
+
+startServer(Number(PORT));
