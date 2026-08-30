@@ -20,6 +20,6 @@ echo Starting local web server...
 start "" "http://localhost:8000"
 
 :: Launch Node.js server
-node server.js
+node local-server.js
 
 pause
