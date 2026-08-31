@@ -3,110 +3,238 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
-		<title>MountainRunner</title>
+		<title>Mountain Runner</title>
+		<link rel="icon" type="image/png" href="runner.icon.png" />
+		<link rel="apple-touch-icon" href="runner.apple-touch-icon.png"/>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
 		<style>
-html, body, #canvas {
-	margin: 0;
-	padding: 0;
-	border: 0;
-}
+			*, *::before, *::after {
+				box-sizing: border-box;
+			}
+			html, body, #canvas {
+				margin: 0;
+				padding: 0;
+				border: 0;
+				width: 100%;
+				height: 100%;
+			}
+			body {
+				color: #fff;
+				background-color: #0b0f19;
+				overflow: hidden;
+				touch-action: none;
+				font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+			}
+			#canvas {
+				display: block;
+				width: 100%;
+				height: 100%;
+			}
+			#canvas:focus {
+				outline: none;
+			}
 
-body {
-	color: white;
-	background-color: black;
-	overflow: hidden;
-	touch-action: none;
-}
+			/* Modern Custom Loading Screen */
+			#status {
+				position: absolute;
+				inset: 0;
+				background: radial-gradient(circle at center, #131d2e 0%, #080c14 100%);
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				z-index: 9999;
+				padding: 24px;
+				transition: opacity 0.5s ease, visibility 0.5s ease;
+			}
 
-#canvas {
-	display: block;
-}
+			.loader-card {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				max-width: 440px;
+				width: 100%;
+				background: rgba(15, 23, 42, 0.75);
+				border: 1px solid rgba(16, 185, 129, 0.25);
+				backdrop-filter: blur(16px);
+				-webkit-backdrop-filter: blur(16px);
+				border-radius: 20px;
+				padding: 28px 24px;
+				box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(16, 185, 129, 0.12);
+				text-align: center;
+				animation: cardFadeIn 0.6s ease-out;
+			}
 
-#canvas:focus {
-	outline: none;
-}
+			@keyframes cardFadeIn {
+				from {
+					opacity: 0;
+					transform: translateY(14px) scale(0.97);
+				}
+				to {
+					opacity: 1;
+					transform: translateY(0) scale(1);
+				}
+			}
 
-#status, #status-splash, #status-progress {
-	position: absolute;
-	left: 0;
-	right: 0;
-}
+			.cover-frame {
+				width: 100%;
+				height: 160px;
+				border-radius: 14px;
+				overflow: hidden;
+				border: 1px solid rgba(255, 255, 255, 0.12);
+				position: relative;
+				margin-bottom: 20px;
+				box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+			}
 
-#status, #status-splash {
-	top: 0;
-	bottom: 0;
-}
+			.cover-img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				display: block;
+				transition: transform 0.4s ease;
+			}
 
-#status {
-	background-color: #242424;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	visibility: hidden;
-}
+			.game-title {
+				font-size: 1.5rem;
+				font-weight: 900;
+				letter-spacing: -0.02em;
+				margin: 0 0 6px 0;
+				background: linear-gradient(135deg, #ffffff 30%, #34d399 100%);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				text-transform: uppercase;
+			}
 
-#status-splash {
-	max-height: 100%;
-	max-width: 100%;
-	margin: auto;
-}
+			.game-subtitle {
+				font-size: 0.85rem;
+				color: #94a3b8;
+				margin: 0 0 20px 0;
+				font-weight: 500;
+			}
 
-#status-splash.show-image--false {
-	display: none;
-}
+			/* Progress Bar Component */
+			.progress-container {
+				width: 100%;
+				margin-bottom: 12px;
+			}
 
-#status-splash.fullsize--true {
-	height: 100%;
-	width: 100%;
-	object-fit: contain;
-}
+			.progress-track {
+				width: 100%;
+				height: 10px;
+				background: rgba(255, 255, 255, 0.08);
+				border-radius: 9999px;
+				overflow: hidden;
+				border: 1px solid rgba(255, 255, 255, 0.06);
+				position: relative;
+			}
 
-#status-splash.use-filter--false {
-	image-rendering: pixelated;
-}
+			.progress-fill {
+				height: 100%;
+				width: 0%;
+				background: linear-gradient(90deg, #059669, #10b981, #06b6d4);
+				border-radius: 9999px;
+				transition: width 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+				box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+				position: relative;
+			}
 
-#status-progress, #status-notice {
-	display: none;
-}
+			.progress-fill::after {
+				content: '';
+				position: absolute;
+				top: 0; left: 0; bottom: 0; right: 0;
+				background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+				animation: shimmer 1.5s infinite;
+			}
 
-#status-progress {
-	bottom: 10%;
-	width: 50%;
-	margin: 0 auto;
-}
+			@keyframes shimmer {
+				0% { transform: translateX(-100%); }
+				100% { transform: translateX(100%); }
+			}
 
-#status-notice {
-	background-color: #5b3943;
-	border-radius: 0.5rem;
-	border: 1px solid #9b3943;
-	color: #e0e0e0;
-	font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
-	line-height: 1.3;
-	margin: 0 2rem;
-	overflow: hidden;
-	padding: 1rem;
-	text-align: center;
-	z-index: 1;
-}
+			.status-text-row {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				width: 100%;
+				font-size: 0.8rem;
+				font-weight: 600;
+				color: #cbd5e1;
+				margin-top: 8px;
+			}
+
+			.status-percent {
+				color: #34d399;
+				font-family: monospace;
+				font-size: 0.85rem;
+			}
+
+			.controls-badge {
+				margin-top: 14px;
+				padding: 6px 14px;
+				border-radius: 9999px;
+				background: rgba(255, 255, 255, 0.05);
+				border: 1px solid rgba(255, 255, 255, 0.08);
+				color: #94a3b8;
+				font-size: 0.75rem;
+				font-weight: 500;
+				display: inline-flex;
+				align-items: center;
+				gap: 6px;
+			}
+
+			/* Error / Notice Display */
+			#status-notice {
+				display: none;
+				margin-top: 16px;
+				background-color: rgba(239, 68, 68, 0.15);
+				border-radius: 12px;
+				border: 1px solid rgba(239, 68, 68, 0.4);
+				color: #fca5a5;
+				font-size: 0.82rem;
+				line-height: 1.4;
+				padding: 12px;
+				text-align: center;
+				max-width: 100%;
+			}
 		</style>
-		<link id="-gd-engine-icon" rel="icon" type="image/png" href="runner.icon.png" />
-<link rel="apple-touch-icon" href="runner.apple-touch-icon.png"/>
-
 	</head>
 	<body>
 		<canvas id="canvas">
-			Your browser does not support the canvas tag.
+			Your browser does not support the HTML5 canvas tag.
 		</canvas>
 
 		<noscript>
-			Your browser does not support JavaScript.
+			<div style="color:white; text-align:center; padding: 40px;">Your browser does not support JavaScript.</div>
 		</noscript>
 
+		<!-- Custom Branded Loading Screen -->
 		<div id="status">
-			<img id="status-splash" class="show-image--true fullsize--true use-filter--true" src="runner.png" alt="">
-			<progress id="status-progress"></progress>
-			<div id="status-notice"></div>
+			<div class="loader-card">
+				<div class="cover-frame">
+					<img class="cover-img" src="mountain_runner_cover.png" alt="Mountain Runner Cover" onerror="this.src='runner.icon.png'">
+				</div>
+				<h1 class="game-title">Mountain Runner</h1>
+				<div class="game-subtitle">Endless high-altitude sprint</div>
+
+				<div class="progress-container">
+					<div class="progress-track">
+						<div id="custom-progress-bar" class="progress-fill"></div>
+					</div>
+					<div class="status-text-row">
+						<span id="status-label">Loading game engine...</span>
+						<span id="status-percent" class="status-percent">0%</span>
+					</div>
+				</div>
+
+				<div class="controls-badge">
+					<span>🎮</span> Controls: Arrow Keys / WASD • Space to Jump
+				</div>
+
+				<div id="status-notice"></div>
+			</div>
 		</div>
 
 		<script src="runner.js"></script>
@@ -117,7 +245,9 @@ const engine = new Engine(GODOT_CONFIG);
 
 (function () {
 	const statusOverlay = document.getElementById('status');
-	const statusProgress = document.getElementById('status-progress');
+	const progressBar = document.getElementById('custom-progress-bar');
+	const statusLabel = document.getElementById('status-label');
+	const statusPercent = document.getElementById('status-percent');
 	const statusNotice = document.getElementById('status-notice');
 
 	let initializing = true;
@@ -128,12 +258,15 @@ const engine = new Engine(GODOT_CONFIG);
 			return;
 		}
 		if (mode === 'hidden') {
-			statusOverlay.remove();
+			statusOverlay.style.opacity = '0';
+			statusOverlay.style.pointerEvents = 'none';
+			setTimeout(() => {
+				statusOverlay.remove();
+			}, 500);
 			initializing = false;
 			return;
 		}
 		statusOverlay.style.visibility = 'visible';
-		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
 		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
 		statusMode = mode;
 	}
@@ -156,7 +289,7 @@ const engine = new Engine(GODOT_CONFIG);
 		} else if (typeof err === 'string') {
 			setStatusNotice(err);
 		} else {
-			setStatusNotice('An unknown error occurred.');
+			setStatusNotice('An unknown error occurred while launching.');
 		}
 		setStatusMode('notice');
 		initializing = false;
@@ -174,7 +307,6 @@ const engine = new Engine(GODOT_CONFIG);
 			} catch (err) {
 				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
 			}
-			// There's a chance that installing the service worker would fix the issue
 			Promise.race([
 				serviceWorkerRegistrationPromise.then((registration) => {
 					if (registration != null) {
@@ -182,18 +314,15 @@ const engine = new Engine(GODOT_CONFIG);
 					}
 					return registration;
 				}).then(() => engine.installServiceWorker()),
-				// For some reason, `getRegistration()` can stall
 				new Promise((resolve) => {
 					setTimeout(() => resolve(), 2000);
 				}),
 			]).then(() => {
-				// Reload if there was no error.
 				window.location.reload();
 			}).catch((err) => {
 				console.error('Error while registering service worker:', err);
 			});
 		} else {
-			// Display the message as usual
 			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
 			displayFailureNotice(missingMsg + missing.join('\n'));
 		}
@@ -202,19 +331,26 @@ const engine = new Engine(GODOT_CONFIG);
 		engine.startGame({
 			'onProgress': function (current, total) {
 				if (current > 0 && total > 0) {
-					statusProgress.value = current;
-					statusProgress.max = total;
+					const pct = Math.min(100, Math.round((current / total) * 100));
+					progressBar.style.width = pct + '%';
+					statusPercent.textContent = pct + '%';
+					statusLabel.textContent = pct === 100 ? 'Starting game...' : 'Loading game data...';
 				} else {
-					statusProgress.removeAttribute('value');
-					statusProgress.removeAttribute('max');
+					progressBar.style.width = '60%';
+					statusPercent.textContent = '...';
+					statusLabel.textContent = 'Loading engine...';
 				}
 			},
 		}).then(() => {
-			setStatusMode('hidden');
+			progressBar.style.width = '100%';
+			statusPercent.textContent = '100%';
+			statusLabel.textContent = 'Ready!';
+			setTimeout(() => {
+				setStatusMode('hidden');
+			}, 250);
 		}, displayFailureNotice);
 	}
 }());
 		</script>
 	</body>
 </html>
-
