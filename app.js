@@ -8,36 +8,6 @@
 
 const GAMES_DATABASE = [
   {
-    id: "rickshaw-rush",
-    title: "Rickshaw Rush: Streets of Dhaka",
-    description: "Navigate the busy streets of Dhaka in your rickshaw. Dodge traffic and transport passengers in this arcade game built with Godot.",
-    category: "racing",
-    players: "1 Player",
-    path: "Rick crash/rikcrash.html",
-    thumbnail: "Rick crash/rickshaw_rush_cover.png",
-    featured: true
-  },
-  {
-    id: "mountain-runner",
-    title: "Mountain Runner",
-    description: "Run and dodge obstacles across high-altitude mountain trails. Ride ziplines and collect coins in this endless runner built with Godot.",
-    category: "platformer",
-    players: "1 Player",
-    path: "mountain_runner/runner.html",
-    thumbnail: "mountain_runner/mountain_runner_cover.png",
-    featured: false
-  },
-  {
-    id: "stick-fight",
-    title: "StickFight: Notebook Duel",
-    description: "Fast-paced notebook sword duel featuring fluid procedural stickman animations and physics. Master combos, parries, clashes, and boss battles.",
-    category: "fighting",
-    players: "1 Player",
-    path: "StickFight/index.html",
-    thumbnail: "StickFight/stickfight_cover.png",
-    featured: true
-  },
-  {
     id: "immune",
     title: "IMMUNE",
     description: "Defend the human body across 100 microscopic levels with soft-body physics, procedural fluid rendering, and adaptive cellular mutations.",
@@ -56,6 +26,36 @@ const GAMES_DATABASE = [
     path: "OVERTIME/index.html",
     thumbnail: "OVERTIME/overtime_cover.png",
     featured: true
+  },
+  {
+    id: "stick-fight",
+    title: "StickFight: Notebook Duel",
+    description: "Fast-paced notebook sword duel featuring fluid procedural stickman animations and physics. Master combos, parries, clashes, and boss battles.",
+    category: "fighting",
+    players: "1 Player",
+    path: "StickFight/index.html",
+    thumbnail: "StickFight/stickfight_cover.png",
+    featured: true
+  },
+  {
+    id: "rickshaw-rush",
+    title: "Rickshaw Rush: Streets of Dhaka",
+    description: "Navigate the busy streets of Dhaka in your rickshaw. Dodge traffic and transport passengers in this arcade game built with Godot.",
+    category: "racing",
+    players: "1 Player",
+    path: "Rick crash/rikcrash.html",
+    thumbnail: "Rick crash/rickshaw_rush_cover.png",
+    featured: true
+  },
+  {
+    id: "mountain-runner",
+    title: "Mountain Runner",
+    description: "Run and dodge obstacles across high-altitude mountain trails. Ride ziplines and collect coins in this endless runner built with Godot.",
+    category: "platformer",
+    players: "1 Player",
+    path: "mountain_runner/runner.html",
+    thumbnail: "mountain_runner/mountain_runner_cover.png",
+    featured: false
   }
 ];
 
