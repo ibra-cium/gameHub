@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <title>বাঁশ Climber — Dhaka Rooftops</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Kalam:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --paper: #f7f3e8;
+            --ink: #20272f;
+            --ink-2: #5d6b7b;
+            --rule: #c9d8e8;
+            --margin: #e39a9a;
+            --green: #0b7a5f;
+            --red: #b3261e;
+            --amber: #c98a12;
+            --panel-bg: rgba(255, 253, 246, 0.96);
+            --shadow: 3px 3px 0 var(--ink);
+            --radius-panel: 14px 6px 16px 6px / 6px 16px 6px 14px;
+            --radius-btn: 12px 5px 13px 5px / 5px 13px 5px 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: 'Kalam', ui-rounded, system-ui, sans-serif;
+            touch-action: none;
+            overscroll-behavior: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* ---------- HUD shell ---------- */
+        .hud {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            padding: 10px 12px;
+            padding-top: calc(10px + env(safe-area-inset-top));
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 2px solid var(--ink);
+            border-radius: var(--radius-panel);
+            box-shadow: var(--shadow);
+            pointer-events: auto;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+        /* ---------- readout ---------- */
+        .readout {
+            padding: 8px 13px 9px;
+            min-width: 0;
+            flex: 1 1 auto;
+            max-width: 200px;
+        }
+
+        .readout .num {
+            font-family: 'Caveat', cursive;
+            font-size: 36px;
+            line-height: .9;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .readout .num span {
+            font-size: 16px;
+            margin-left: 2px;
+            color: var(--ink-2);
+        }
+
+        .readout .sub {
+            display: flex;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--ink-2);
+            margin-top: 5px;
+            flex-wrap: wrap;
+        }
+
+        .readout .sub b {
+            color: var(--ink);
+            font-weight: 700;
+        }
+
+        .place {
+            font-family: 'Caveat', cursive;
+            font-size: 16px;
+            line-height: 1;
+            color: var(--green);
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 160px;
+        }
+
+        /* ---------- buttons ---------- */
+        .tools {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            pointer-events: auto;
+            cursor: pointer;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            display: grid;
+            place-items: center;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: grid;
+            place-items: center;
+            font-size: 16px;
+            font-family: inherit;
+            background: rgba(247, 243, 232, 0.92);
+            color: var(--ink);
+            border: 1.5px solid var(--ink);
+            border-radius: 3px;
+            transition: background .1s, opacity .1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn:active { background: rgba(32,39,47,.08); }
+
+        .btn:focus-visible {
+            outline: 2px solid var(--green);
+            outline-offset: 2px;
+        }
+
+        .btn.off { opacity: .3; }
+
+        .btn.wide {
+            width: auto;
+            padding: 0 14px;
+            font-size: 12px;
+            height: 36px;
+            letter-spacing: .04em;
+        }
+
+        /* ── Progress rail ───────────────────────────────── */
+        .rail {
+            position: fixed;
+            right: 14px;
+            top: calc(80px + env(safe-area-inset-top));
+            bottom: calc(120px + env(safe-area-inset-bottom));
+            width: 3px;
+            background: var(--ink-3);
+            border-radius: 2px;
+            pointer-events: none;
+        }
+
+        .rail .fill {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--green);
+            border-radius: 2px;
+            transition: height .2s;
+        }
+
+        .rail .best {
+            position: absolute;
+            left: -4px;
+            right: -4px;
+            height: 2px;
+            background: var(--red);
+            border-radius: 1px;
+        }
+
+        /* ── Bottom controls ─────────────────────────────── */
+        .bottom {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .controls-row {
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            width: 100%;
+            gap: 10px;
+        }
+
+        .hint {
+            pointer-events: auto;
+            flex: 1;
+            max-width: 340px;
+            padding: 9px 13px;
+            background: rgba(247, 243, 232, 0.92);
+            border: 1.5px solid var(--ink-3);
+            border-radius: 3px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: var(--ink-2);
+            transition: opacity .4s;
+        }
+
+        .hint b { color: var(--ink); }
+
+        .hint .close {
+            display: inline-block;
+            margin-left: 8px;
+            cursor: pointer;
+            font-size: 11px;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            color: var(--ink-2);
+            pointer-events: auto;
+        }
+
+        .stuckbox {
+            display: none;
+            padding: 10px 14px;
+            text-align: center;
+            font-size: 12.5px;
+            line-height: 1.5;
+            max-width: min(280px, 88vw);
+            pointer-events: auto;
+            background: rgba(247, 243, 232, 0.96);
+            border: 1.5px solid var(--red);
+            border-radius: 3px;
+            color: var(--ink-2);
+        }
+
+        .stuckbox b { color: var(--ink); }
+
+        .stuckbox.show { display: block; }
+
+        .stuckbox .btn {
+            margin-top: 8px;
+            height: 34px;
+            width: 100%;
+            background: rgba(179, 38, 30, .06);
+            border-color: var(--red);
+            color: var(--red);
+            font-size: 12px;
+            letter-spacing: .04em;
+        }
+
+        /* ── GRIP — big confident thumb zone ─────────────── */
+        .grip {
+            pointer-events: auto;
+            cursor: pointer;
+            flex-shrink: 0;
+            width: 80px;
+            height: 80px;
+            font-family: 'Kalam', inherit;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            line-height: 1;
+            background: rgba(247, 243, 232, 0.95);
+            color: var(--ink);
+            border: 1.5px solid var(--ink);
+            border-radius: 3px;
+            transition: background .08s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .grip::before {
+            content: '';
+            display: block;
+            width: 28px;
+            height: 2px;
+            background: var(--ink);
+            border-radius: 1px;
+            transition: transform .08s;
+        }
+
+        .grip small {
+            font-size: 10px;
+            font-weight: 400;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--ink-2);
+        }
+
+        .grip.on {
+            background: rgba(11, 122, 95, .1);
+        }
+
+        .grip.on::before {
+            transform: scaleX(0.55);
+            background: var(--green);
+        }
+
+        .grip:focus-visible {
+            outline: 2px solid var(--green);
+            outline-offset: 2px;
+        }
+
+        /* ── Toast ───────────────────────────────────────── */
+        .toast {
+            position: fixed;
+            left: 50%;
+            top: calc(80px + env(safe-area-inset-top));
+            transform: translateX(-50%) translateY(-6px);
+            font-family: 'Caveat', cursive;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--red);
+            background: rgba(247, 243, 232, 0.96);
+            border: 1.5px solid var(--ink);
+            border-radius: 3px;
+            padding: 4px 18px 6px;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 15;
+            transition: opacity .25s, transform .25s;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ── Section banner ──────────────────────────────── */
+        .banner {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) translateY(6px);
+            font-family: 'Caveat', cursive;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--ink);
+            opacity: 0;
+            pointer-events: none;
+            text-align: center;
+            z-index: 12;
+            transition: opacity .4s, transform .4s;
+        }
+
+        .banner.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) translateY(0);
+        }
+
+        .banner small {
+            display: block;
+            font-size: 15px;
+            font-weight: 400;
+            color: var(--ink-2);
+            margin-top: 4px;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        /* ── Win modal ───────────────────────────────────── */
+        .veil {
+            position: fixed;
+            inset: 0;
+            background: rgba(32, 39, 47, .28);
+            display: none;
+            place-items: center;
+            padding: 20px;
+            z-index: 20;
+        }
+
+        .veil.show { display: grid; }
+
+        .modal {
+            max-width: 340px;
+            width: 100%;
+            padding: 28px 24px 24px;
+            text-align: center;
+            background: var(--paper);
+            border: 1.5px solid var(--ink);
+            border-radius: 3px;
+        }
+
+        .modal h2 {
+            font-family: 'Caveat', cursive;
+            font-size: 42px;
+            font-weight: 700;
+            line-height: 1;
+            margin: 0 0 6px;
+            color: var(--ink);
+        }
+
+        .modal p {
+            margin: 0 0 20px;
+            font-size: 13px;
+            color: var(--ink-2);
+            line-height: 1.6;
+        }
+
+        .stats {
+            display: flex;
+            gap: 1px;
+            margin-bottom: 20px;
+            border: 1.5px solid var(--ink-3);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .stat {
+            flex: 1;
+            padding: 12px 4px 10px;
+            border-right: 1px solid var(--ink-3);
+        }
+
+        .stat:last-child { border-right: none; }
+
+        .stat b {
+            display: block;
+            font-family: 'Caveat', cursive;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--ink);
+        }
+
+        .stat span {
+            display: block;
+            font-size: 10px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--ink-2);
+            margin-top: 4px;
+        }
+
+        .go {
+            width: 100%;
+            height: 48px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            background: var(--green);
+            color: #fff;
+            border-color: var(--green);
+            border-radius: 3px;
+        }
+
+        .go:active { background: #09624c; border-color: #09624c; }
+
+        /* ── Thumb-zone grip — mobile only ───────────────── */
+        /* Hidden by default; mobile media query enables it  */
+        #grip-thumb { display: none; }
+
+        /* On narrow screens the grip button is ripped out of the
+           HUD flow and pinned to the bottom-right thumb zone.    */
+        @media (max-width: 600px) {
+            /* Hide the grip inside the HUD flow */
+            .controls-row .grip { display: none; }
+
+            /* Fixed thumb-zone grip */
+            #grip-thumb {
+                display: flex;
+                position: fixed;
+                right: 14px;
+                bottom: calc(18px + env(safe-area-inset-bottom));
+                width: 88px;
+                height: 88px;
+                z-index: 10;
+                pointer-events: auto;
+                cursor: pointer;
+                font-family: 'Kalam', inherit;
+                font-size: 15px;
+                font-weight: 700;
+                letter-spacing: .04em;
+                line-height: 1;
+                background: rgba(247, 243, 232, 0.96);
+                color: var(--ink);
+                border: 2px solid var(--ink);
+                border-radius: 18px;
+                box-shadow: 0 4px 16px rgba(32,39,47,.18), 3px 3px 0 var(--ink);
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+                transition: background .08s, transform .08s;
+                -webkit-tap-highlight-color: transparent;
+                touch-action: none;
+            }
+            #grip-thumb::before {
+                content: '';
+                display: block;
+                width: 30px;
+                height: 2.5px;
+                background: var(--ink);
+                border-radius: 2px;
+                transition: transform .08s;
+            }
+            #grip-thumb small {
+                font-size: 10px;
+                font-weight: 400;
+                letter-spacing: .08em;
+                text-transform: uppercase;
+                color: var(--ink-2);
+            }
+            #grip-thumb.on {
+                background: rgba(11, 122, 95, .12);
+                box-shadow: 0 4px 20px rgba(11,122,95,.22), 3px 3px 0 var(--green);
+                border-color: var(--green);
+            }
+            #grip-thumb.on::before {
+                transform: scaleX(0.55);
+                background: var(--green);
+            }
+
+            /* Hint sits alone on the left, grip space freed */
+            .controls-row { justify-content: flex-start; }
+            .hint { max-width: calc(100% - 110px); }
+
+            /* Shrink HUD elements */
+            .hud { padding: 8px 8px; padding-top: calc(8px + env(safe-area-inset-top)); padding-bottom: calc(8px + env(safe-area-inset-bottom)); gap: 4px; }
+            .readout { padding: 6px 10px 7px; max-width: 160px; }
+            .readout .num { font-size: 30px; }
+            .readout .sub { font-size: 10px; gap: 5px; margin-top: 3px; }
+            .place { font-size: 11px; max-width: 130px; margin-bottom: 2px; }
+            .btn { width: 36px; height: 36px; font-size: 14px; }
+            .tools { gap: 4px; }
+            .bottom { gap: 5px; padding-bottom: calc(108px + env(safe-area-inset-bottom)); }
+        }
+
+        @media (max-width: 400px) {
+            .hud { padding: 6px 6px; padding-top: calc(6px + env(safe-area-inset-top)); padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+            .readout .num { font-size: 26px; }
+            .readout .sub { font-size: 9px; }
+            .place { font-size: 10px; max-width: 100px; }
+            .btn { width: 32px; height: 32px; font-size: 13px; }
+            #grip-thumb { width: 80px; height: 80px; font-size: 13px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom)); }
+        }
+
+        @media (max-height: 620px) {
+            .hint { display: none; }
+            .readout .num { font-size: 26px; }
+            .readout .sub { margin-top: 3px; }
+            #grip-thumb { width: 76px; height: 76px; }
+        }
+
+        /* On wider screens the thumb button is hidden — normal grip handles it */
+        @media (min-width: 601px) {
+            #grip-thumb { display: none !important; }
+        }
+
+        @media (min-width: 600px) {
+            .readout .num { font-size: 48px; }
+            .grip { width: 88px; height: 88px; }
+            .btn { width: 44px; height: 44px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { transition-duration: .01ms !important; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="c"></canvas>
+
+    <div class="hud">
+        <div class="row">
+            <div class="readout">
+                <div class="place" id="place">পুরান ঢাকার ছাদ</div>
+                <div class="num" id="h">0<span>m</span></div>
+                <div class="sub">
+                    <div>best <b id="best">0m</b></div>
+                    <div>falls <b id="falls">0</b></div>
+                    <div><b id="clock">0:00</b></div>
+                </div>
+            </div>
+            <div class="tools">
+                <button class="btn" id="rope" title="Safety rope">🪢</button>
+                <button class="btn" id="snd" title="Sound">🔈</button>
+                <button class="btn" id="rst" title="Restart">↺</button>
+            </div>
+        </div>
+
+        <div class="bottom">
+            <div class="stuckbox" id="stuckbox">
+                Wedged in? Hold <b>grip</b> to pull the bamboo short, then swing out.
+                <button class="btn wide" id="nudge">hop ↑</button>
+            </div>
+            <div class="controls-row">
+                <div class="hint" id="hint">
+                    Swing the <b>বাঁশ</b> — plant the tip on a ledge, pull.<br>
+                    Hold <b>grip</b> (or Space / click) to choke up the pole.
+                    <span class="close" id="hintX">hide</span>
+                </div>
+                <button class="grip" id="grip">
+                    grip
+                    <small>hold</small>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="rail">
+        <div class="fill" id="fill"></div>
+        <div class="best" id="bestline" style="bottom:0"></div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <div class="banner" id="banner"></div>
+
+    <div class="veil" id="veil">
+        <div class="modal">
+            <h2>ছাদে পৌঁছে গেছো!</h2>
+            <p>Water tanks, bamboo scaffolding, rickshaws, slippery tin — all the way to the flag.</p>
+            <div class="stats">
+                <div class="stat"><b id="wT">0:00</b><span>time</span></div>
+                <div class="stat"><b id="wF">0</b><span>falls</span></div>
+                <div class="stat"><b id="wM">0m</b><span>climbed</span></div>
+            </div>
+            <button class="btn go" id="again">Climb again</button>
+        </div>
+    </div>
+
+    <!-- Fixed thumb-zone grip — shown on mobile only via CSS -->
+    <button id="grip-thumb" aria-label="Grip (hold)">
+        grip
+        <small>hold</small>
+    </button>
+
+    <script>
+        "use strict";
+        /* =======================================================================
+           বাঁশ Climber — a Getting Over It style climber on notebook paper.
+           Physics note: the pole is a RIGID STICK, not a force field. When the tip
+           would sink into geometry it gets pushed back out, and the body is moved
+           by the same amount. Velocity is read back from how far the body actually
+           moved. Every vault, hook and slip falls out of that one rule.
+           ======================================================================= */
+
+        /* ------------------------- world constants ------------------------- */
+        const W = 480;    // width of the climbing column, in world units
+        const TOP = -3900;  // ceiling
+        const GOAL_Y = -3795;  // body height that counts as "on the roof"
+        const U_PER_M = 20;     // world units per metre
+        const BODY_R = 20;
+        const POLE_LONG = 78;     // normal grip: hold the bamboo at the far end
+        const POLE_SHORT = 36;     // choked grip: slide your hands up for control
+        const TIP_R = 6;
+        const GRAV = 0.60;   // units per frame^2
+        const MAX_SPD = 26;     // units per frame
+        const MAX_ROT = 0.36;   // radians the pole can turn per frame
+        const SUB = 6;      // physics sub-steps per frame
+        const STEP = 1 / 60;
+
+        /* ------------------------- canvas ------------------------- */
+        const cv = document.getElementById('c');
+        const ctx = cv.getContext('2d');
+        let cssW = 0, cssH = 0, dpr = 1, scale = 1;
+
+        function resize() {
+            cssW = window.innerWidth; cssH = window.innerHeight;
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            cv.width = Math.round(cssW * dpr);
+            cv.height = Math.round(cssH * dpr);
+            // The column is always the same size in world units, so the level never
+            // changes shape between a phone and a desktop.
+            // Cap scale so the full column (W=480) always fits the viewport with
+            // a comfortable margin — prevents the right side from being clipped on
+            // narrow phones.  On wider screens a higher cap lets it fill nicely.
+            const fitScale = cssW / (W + 80);   // column + 40px margin each side
+            const maxScale = cssW < 600 ? Math.min(fitScale, 0.92) : 1.45;
+            const minScale = cssW < 400 ? 0.55 : cssW < 480 ? 0.62 : 0.68;
+            scale = Math.max(minScale, Math.min(maxScale, fitScale));
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        /* ------------------------- seeded noise ------------------------- */
+        function mulberry32(a) {
+            return function () {
+                a |= 0; a = a + 0x6D2B79F5 | 0;
+                let t = Math.imul(a ^ a >>> 15, 1 | a);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        }
+        // jitter table for the live-drawn character (no Math.sin per frame)
+        const JIT = []; { const r = mulberry32(99); for (let i = 0; i < 512; i++) JIT.push(r() - 0.5); }
+        const jit = i => JIT[i & 511];
+
+        /* ------------------------- doodle path builders -------------------------
+           Every static shape is baked into a Path2D ONCE. Drawing then costs one
+           fill + one stroke, so the wobbly hand-drawn look is basically free.      */
+
+        function pLine(p, x1, y1, x2, y2, rng, amp = 1.6, seg = 15) {
+            const dx = x2 - x1, dy = y2 - y1, d = Math.hypot(dx, dy) || 1;
+            const n = Math.max(1, Math.round(d / seg));
+            const nx = -dy / d, ny = dx / d;
+            p.moveTo(x1, y1);
+            for (let i = 1; i < n; i++) {
+                const t = i / n, o = (rng() - 0.5) * amp * 2;
+                p.lineTo(x1 + dx * t + nx * o, y1 + dy * t + ny * o);
+            }
+            p.lineTo(x2, y2);
+        }
+
+        function pCircle(p, cx, cy, r, rng, amp = 1.8) {
+            const n = Math.max(16, Math.round(r * 0.85));
+            for (let i = 0; i <= n; i++) {
+                const a = i / n * Math.PI * 2, rr = r + (rng() - 0.5) * amp;
+                const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr;
+                i ? p.lineTo(x, y) : p.moveTo(x, y);
+            }
+            p.closePath();
+        }
+
+        function pCapsule(p, x1, y1, x2, y2, r, rng, amp = 1.5) {
+            const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
+            const ux = dx / len, uy = dy / len, nx = -uy, ny = ux;
+            const base = Math.atan2(ny, nx);
+            const steps = Math.max(3, Math.round(len / 18)), cap = 9;
+            let first = true;
+            const put = (x, y) => { first ? (p.moveTo(x, y), first = false) : p.lineTo(x, y); };
+
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps, o = (rng() - 0.5) * amp;
+                put(x1 + dx * t + nx * (r + o), y1 + dy * t + ny * (r + o));
+            }
+            for (let i = 1; i < cap; i++) {
+                const a = base - i / cap * Math.PI;
+                put(x2 + Math.cos(a) * r, y2 + Math.sin(a) * r);
+            }
+            for (let i = steps; i >= 0; i--) {
+                const t = i / steps, o = (rng() - 0.5) * amp;
+                put(x1 + dx * t - nx * (r + o), y1 + dy * t - ny * (r + o));
+            }
+            for (let i = 1; i < cap; i++) {
+                const a = base + Math.PI - i / cap * Math.PI;
+                put(x1 + Math.cos(a) * r, y1 + Math.sin(a) * r);
+            }
+            p.closePath();
+        }
+
+        function pHatch(p, x, y, w, h, rng, gap = 11) {
+            for (let i = gap; i < w + h; i += gap) {
+                const ax = x + Math.min(i, w), ay = y + Math.max(0, i - w);
+                const bx = x + Math.max(0, i - h), by = y + Math.min(i, h);
+                pLine(p, ax, ay, bx, by, rng, 0.7, 20);
+            }
+        }
+
+        /* ------------------------- materials ------------------------- */
+        // slip = fraction of sideways speed kept after ONE FRAME of contact.
+        // The old build applied this once per sub-step, so 0.74 really meant
+        // 0.74^6 = 0.16 — every ledge behaved like glue and you could not shuffle
+        // along it. These are per-frame now and much freer.
+        const MAT = {
+            roof: { fill: '#fffdf5', line: '#20272f', slip: 0.90, mark: 'brick' },
+            brick: { fill: '#fbe3de', line: '#94351f', slip: 0.87, mark: 'brick' },
+            bamboo: { fill: '#fbeec2', line: '#7a4a08', slip: 0.92, mark: 'bamboo' },
+            tank: { fill: '#eaf1f7', line: '#20272f', slip: 0.90, mark: 'ring' },
+            tin: { fill: '#eef2f7', line: '#43536a', slip: 0.995, mark: 'corrug' },
+            rope: { fill: '#fffaea', line: '#3a4757', slip: 0.93, mark: 'thread' },
+            steel: { fill: '#e9eef4', line: '#43536a', slip: 0.93, mark: 'hatch' },
+            wood: { fill: '#f6e7cd', line: '#7a4a08', slip: 0.90, mark: 'grain' },
+            goal: { fill: '#c9f2e0', line: '#0b7a5f', slip: 0.82, mark: 'brick' },
+            wall: { fill: '#f1ede1', line: '#a8b4c2', slip: 0.99, mark: 'none' },
+        };
+
+        /* ------------------------- sections ------------------------- */
+        const SEC = [
+            { bn: 'পুরান ঢাকার ছাদ', en: 'Old Dhaka rooftop', top: -546, mat: 'roof' },
+            { bn: 'বাঁশের ভারা', en: 'Bamboo scaffolding', top: -1050, mat: 'bamboo' },
+            { bn: 'রিকশার গ্যারেজ', en: 'The rickshaw garage', top: -1554, mat: 'steel' },
+            { bn: 'কাপড়ের তার', en: 'Washing lines', top: -2058, mat: 'rope' },
+            { bn: 'টিনের চাল', en: 'Tin roofs', top: -2562, mat: 'tin' },
+            { bn: 'আধা-তোলা বিল্ডিং', en: 'Unfinished building', top: -3066, mat: 'wood' },
+            { bn: 'শেষ বিল্ডিং', en: 'The last building', top: TOP, mat: 'brick' },
+        ];
+        function secAt(y) { let i = 0; while (i < SEC.length - 1 && y < SEC[i].top) i++; return i; }
+
+        /* ------------------------- level ------------------------- */
+        const obs = [];
+        let rng = mulberry32(20260901);
+
+        function reg(o) {
+            o.slip = Math.pow(MAT[o.mat].slip, 1 / SUB);   // per-frame -> per-sub-step
+            obs.push(o);
+            return o;
+        }
+        // ghost = drawn but not solid. Lets the art be as busy as it likes while
+        // the collision shapes stay simple and safe.
+        const ghost = o => { o.ghost = true; return o; };
+        const box = (x, y, w, h, mat, label) => reg({ t: 'r', x, y, w, h, mat, label });
+        const circ = (x, y, r, mat, label) => reg({ t: 'c', x, y, r, mat, label });
+        const cap = (x1, y1, x2, y2, r, mat, label) => reg({ t: 's', x1, y1, x2, y2, r, mat, label });
+
+        /* Two rules keep the climb from ever trapping you:
+             1. rungs alternate sides and NEVER overlap, so nothing is hanging
+                directly above a spot you can stand on;
+             2. anything sitting on a rung stays on that rung's half of the column
+                and is at most 64 units tall.
+           The old build broke both, which is how you ended up wedged in a slot with
+           6 units of headroom and a 78-unit pole. Anything that would break the
+           rules now gets drawn as art instead, and art is not solid.            */
+        const STEP_Y = 84;                 // vertical gap between rungs
+        const LX = 214, RX = 266;          // inner ends of the left / right rungs
+        const NST = 44;                    // stations, bottom to top
+        const stY = i => -84 - i * STEP_Y;
+
+        function buildLevel() {
+            obs.length = 0;
+
+            box(-30, 20, W + 60, 200, 'roof', 'ছাদ / Rooftop');
+            box(-46, TOP - 60, 52, -TOP + 320, 'wall');
+            box(W - 6, TOP - 60, 52, -TOP + 320, 'wall');
+
+            const LBL = [
+                ['প্যারাপেট / Parapet', 'ছাদের কার্নিশ / Ledge', 'ইটের কাজ / Brickwork'],
+                ['বাঁশের ভারা / Bamboo', 'মাচা / Platform', 'বাঁধা বাঁশ / Lashed pole'],
+                ['লোহার পাত / Steel plate', 'পাদানি / Footrest', 'ফ্রেম / Frame'],
+                ['শাড়ির তার / Sari line', 'লুঙ্গির তার / Lungi line', 'তারের খুঁটি / Line post'],
+                ['টিনের চাল / Tin roof', 'পিছল! / Slippery', 'চালের ধার / Roof edge'],
+                ['ঢালাই বিম / Beam', 'রড / Rebar', 'সাটারিং / Formwork'],
+                ['শেষ ধাপ / Last step', '', '']
+            ];
+
+            // ---- the ladder ----
+            for (let i = 0; i < NST; i++) {
+                const y = stY(i), sec = secAt(y), mat = SEC[sec].mat;
+                const left = (i % 2 === 0);
+                const r = mat === 'tin' ? 12 : mat === 'bamboo' ? 9 : mat === 'rope' ? 9 : 11;
+                // Every rung slopes down toward the middle of the column, on both
+                // sides. The old build flipped the slope on right-hand rungs, so you
+                // slid away from the crossing point on every second step and gravity
+                // fought you the whole way up. Tin gets its difficulty from friction.
+                const lean = mat === 'tin' ? 14 : mat === 'bamboo' ? 12 : 9;
+                const outer = left ? 26 + (i % 3) * 16 : W - 26 - (i % 3) * 16;
+                const inner = left ? LX : RX;
+                const lbl = (i % 3 === 0) ? LBL[sec][(i / 3 | 0) % 3] : '';
+                const rung = cap(outer, y - lean / 2, inner, y + lean / 2, r, mat, lbl);
+                if (i % 6 === 0 && i > 0) rung.check = true;   // safety-rope ledge
+            }
+
+            // ---- props. rungTop(i) is where a prop's feet go ----
+            // A prop is placed by its distance from its OWN side's wall, so it can
+            // never drift under the opposite rung. Keep off+width under 186 and it
+            // also stays clear of the crossing corridor in the middle.
+            const rungTop = i => stY(i) - 11;
+            const propX = (i, off, w) => (i % 2 === 0) ? 26 + off : W - 26 - off - w;
+            const propBox = (i, off, w, h, mat, label) => box(propX(i, off, w), rungTop(i) - h, w, h, mat, label);
+            const propCirc = (i, off, r, mat, label) => circ(propX(i, off, 2 * r) + r, rungTop(i) - r, r, mat, label);
+
+            // 1 — rooftop: water tanks and a brick stack
+            propCirc(1, 74, 26, 'tank', 'পানির ট্যাংক / Water tank');
+            propCirc(3, 108, 22, 'tank');
+            propBox(4, 44, 96, 26, 'brick', 'ইট / Bricks');
+
+            // 2 — bamboo: upright poles you can brace off (vertical, so no overhang)
+            cap(150, stY(6) + 30, 150, stY(11) - 30, 8, 'bamboo', 'খাড়া বাঁশ / Upright');
+            cap(340, stY(7) + 30, 340, stY(10) - 30, 8, 'bamboo');
+            propBox(8, 34, 80, 22, 'bamboo');
+
+            // 3 — the rickshaw. Wheels and hood are ART; only small pieces are solid.
+            ghost(circ(150, stY(14) + 10, 54, 'steel', 'রিকশার চাকা / Wheel'));
+            ghost(circ(330, stY(14) + 10, 54, 'steel'));
+            ghost(cap(150, stY(14) + 10, 330, stY(14) + 10, 6, 'steel'));
+            ghost(cap(170, stY(15) - 6, 310, stY(15) - 30, 22, 'roof', 'হুড / Hood'));
+            ghost(box(196, stY(15) + 24, 90, 30, 'wood'));
+            propBox(13, 64, 90, 26, 'wood', 'সিট / Seat');
+            propCirc(16, 66, 24, 'steel', 'চাকা / Wheel');
+
+            // 4 — washing lines: hanging cloth is art, the buckets are solid
+            ghost(box(300, stY(19) - 4, 34, 96, 'rope', 'শাড়ি / Sari'));
+            ghost(box(344, stY(19) - 4, 30, 74, 'rope'));
+            ghost(box(80, stY(21) - 4, 32, 88, 'rope', 'লুঙ্গি / Lungi'));
+            propCirc(20, 60, 24, 'steel', 'বালতি / Bucket');
+            propBox(22, 54, 76, 22, 'steel', 'গ্রিল / Grill');
+
+            // 5 — tin roofs: a chimney to hook while everything else slides
+            propBox(25, 80, 40, 38, 'brick', 'চিমনি / Chimney');
+            ghost(box(336, stY(25) - 11 - 92, 32, 36, 'brick'));
+
+            // 6 — unfinished building
+            propCirc(31, 86, 24, 'steel', 'মিক্সার / Mixer');
+            ghost(cap(310, stY(31) - 46, 380, stY(31) - 70, 8, 'steel'));
+            propBox(33, 50, 100, 26, 'wood', 'সিমেন্টের বস্তা / Cement');
+            ghost(cap(60, stY(35) + 2, 200, stY(35) - 30, 6, 'steel', 'রড / Rebar'));
+
+            // extra scenery. All ghosts, so it can sit anywhere without trapping you.
+            ghost(cap(300, stY(2) - 30, 360, stY(2) - 64, 4, 'steel', 'ডিশ / Dish'));
+            ghost(circ(330, stY(2) - 64, 22, 'steel'));
+            ghost(cap(40, stY(9) + 20, 200, stY(9) - 46, 5, 'bamboo'));
+            ghost(cap(280, stY(10) + 20, 440, stY(10) - 46, 5, 'bamboo'));
+            ghost(box(120, stY(18) - 4, 30, 80, 'rope'));
+            ghost(box(390, stY(23) - 4, 36, 92, 'rope', 'কাঁথা / Quilt'));
+            ghost(cap(40, stY(27) - 16, 200, stY(27) - 34, 9, 'tin'));
+            ghost(box(300, stY(29) - 70, 120, 12, 'tin', 'টিনের পাত / Tin sheets'));
+            ghost(box(300, stY(29) - 56, 120, 12, 'tin'));
+            ghost(cap(60, stY(34) + 4, 190, stY(34) - 26, 5, 'steel'));
+            ghost(box(280, stY(37) - 4, 26, 74, 'wood', 'সাটারিং / Formwork'));
+
+            // 7 — the roof. Nothing above it, so it can be as wide as it likes.
+            cap(40, -3771, 218, -3780, 14, 'goal', '🏁 ছাদ / THE ROOF');
+            ghost(box(26, -3800, 216, 30, 'goal'));
+            ghost(cap(120, -3798, 120, -3878, 5, 'steel'));
+            ghost(box(122, -3878, 46, 28, 'brick', 'পতাকা / Flag'));
+        }
+
+        /* ------------------------- bake the drawing ------------------------- */
+        function bake() {
+            rng = mulberry32(4242);
+            for (const o of obs) {
+                const body = new Path2D(), mark = new Path2D();
+                let x0, y0, x1b, y1b;
+
+                if (o.t === 'r') {
+                    body.moveTo(o.x, o.y);
+                    pLine(body, o.x, o.y, o.x + o.w, o.y, rng, 1.5);
+                    pLine(body, o.x + o.w, o.y, o.x + o.w, o.y + o.h, rng, 1.5);
+                    pLine(body, o.x + o.w, o.y + o.h, o.x, o.y + o.h, rng, 1.5);
+                    pLine(body, o.x, o.y + o.h, o.x, o.y, rng, 1.5);
+                    body.closePath();
+                    x0 = o.x; y0 = o.y; x1b = o.x + o.w; y1b = o.y + o.h;
+                } else if (o.t === 'c') {
+                    pCircle(body, o.x, o.y, o.r, rng);
+                    x0 = o.x - o.r; y0 = o.y - o.r; x1b = o.x + o.r; y1b = o.y + o.r;
+                } else {
+                    pCapsule(body, o.x1, o.y1, o.x2, o.y2, o.r, rng);
+                    x0 = Math.min(o.x1, o.x2) - o.r; y0 = Math.min(o.y1, o.y2) - o.r;
+                    x1b = Math.max(o.x1, o.x2) + o.r; y1b = Math.max(o.y1, o.y2) + o.r;
+                }
+
+                // surface markings
+                const m = MAT[o.mat].mark;
+                if (m === 'hatch' || m === 'brick') {
+                    if (o.t === 'r') pHatch(mark, o.x + 3, o.y + 3, o.w - 6, o.h - 6, rng, m === 'brick' ? 9 : 12);
+                    else if (o.t === 's') {
+                        const dx = o.x2 - o.x1, dy = o.y2 - o.y1, n = Math.max(2, Math.round(Math.hypot(dx, dy) / 26));
+                        for (let k = 1; k < n; k++) {
+                            const t = k / n, cx = o.x1 + dx * t, cy = o.y1 + dy * t;
+                            pLine(mark, cx, cy - o.r * 0.7, cx, cy + o.r * 0.7, rng, 0.6, 12);
+                        }
+                    } else {
+                        for (let a = 0; a < Math.PI * 2; a += Math.PI / 3)
+                            pLine(mark, o.x + Math.cos(a) * o.r * 0.35, o.y + Math.sin(a) * o.r * 0.35,
+                                o.x + Math.cos(a) * o.r * 0.9, o.y + Math.sin(a) * o.r * 0.9, rng, 0.6, 14);
+                    }
+                } else if (m === 'bamboo' || m === 'grain') {
+                    const dx = o.t === 's' ? o.x2 - o.x1 : o.w, dy = o.t === 's' ? o.y2 - o.y1 : 0;
+                    const sx = o.t === 's' ? o.x1 : o.x, sy = o.t === 's' ? o.y1 : o.y + o.h / 2;
+                    const rr = o.t === 's' ? o.r : o.h / 2;
+                    const n = Math.max(2, Math.round(Math.hypot(dx, dy) / 34));
+                    for (let k = 1; k < n; k++) {
+                        const t = k / n, cx = sx + dx * t, cy = sy + dy * t;
+                        pLine(mark, cx, cy - rr, cx, cy + rr, rng, 0.6, 10);
+                    }
+                } else if (m === 'corrug') {
+                    const dx = o.x2 - o.x1, dy = o.y2 - o.y1, L = Math.hypot(dx, dy);
+                    const ux = dx / L, uy = dy / L, nx = -uy, ny = ux, n = Math.round(L / 12);
+                    for (let k = 1; k < n; k++) {
+                        const t = k / n, cx = o.x1 + dx * t, cy = o.y1 + dy * t;
+                        pLine(mark, cx - nx * o.r * 0.8, cy - ny * o.r * 0.8, cx + ux * 4 + nx * o.r * 0.8, cy + uy * 4 + ny * o.r * 0.8, rng, 0.5, 12);
+                    }
+                } else if (m === 'thread') {
+                    const dx = o.x2 - o.x1, dy = o.y2 - o.y1, n = Math.round(Math.hypot(dx, dy) / 9);
+                    for (let k = 1; k < n; k++) {
+                        const t = k / n;
+                        pLine(mark, o.x1 + dx * t, o.y1 + dy * t - o.r, o.x1 + dx * t + 3, o.y1 + dy * t + o.r, rng, 0.4, 9);
+                    }
+                } else if (m === 'ring') {
+                    pCircle(mark, o.x, o.y - o.r * 0.45, o.r * 0.82, rng, 1.2);
+                    pCircle(mark, o.x, o.y + o.r * 0.25, o.r * 0.9, rng, 1.2);
+                }
+
+                o.path = body; o.mark = mark;
+                o.bb = { x0, y0, x1: x1b, y1: y1b };
+            }
+        }
+
+        /* ------------------------- background doodles ------------------------- */
+        const decor = [];
+        function buildDecor() {
+            decor.length = 0;
+            const r = mulberry32(777);
+
+            // clouds and birds down the whole climb
+            for (let y = -140; y > TOP; y -= 330) {
+                const cx = 40 + r() * (W - 80);
+                const p = new Path2D();
+                pCircle(p, cx - 26, y, 20 + r() * 6, r, 1.6);
+                pCircle(p, cx, y - 11, 26 + r() * 6, r, 1.6);
+                pCircle(p, cx + 27, y + 1, 18 + r() * 6, r, 1.6);
+                decor.push({ p, y0: y - 46, y1: y + 46, fill: 'rgba(255,255,255,.72)', line: '#b9c6d4', lw: 1.6 });
+
+                const bp = new Path2D(); const bx = 60 + r() * (W - 120), by = y - 60 - r() * 70;
+                for (let k = 0; k < 3; k++) {
+                    const ox = k * 22, oy = k * 9;
+                    pLine(bp, bx + ox, by + oy, bx + ox + 9, by + oy - 7, r, .6, 20);
+                    pLine(bp, bx + ox + 9, by + oy - 7, bx + ox + 18, by + oy, r, .6, 20);
+                }
+                decor.push({ p: bp, y0: by - 20, y1: by + 30, line: '#5d6b7b', lw: 1.6 });
+            }
+
+            // a kite near the top — the only bit of colour in the sky
+            const k = new Path2D();
+            k.moveTo(360, -3520); k.lineTo(392, -3488); k.lineTo(360, -3452); k.lineTo(330, -3488); k.closePath();
+            decor.push({ p: k, y0: -3560, y1: -3300, fill: '#f6c9a0', line: '#b3261e', lw: 2 });
+            const kt = new Path2D();
+            pLine(kt, 360, -3452, 344, -3400, r, 3, 14); pLine(kt, 344, -3400, 366, -3350, r, 3, 14);
+            decor.push({ p: kt, y0: -3560, y1: -3300, line: '#b3261e', lw: 1.4 });
+
+            // minaret + skyline behind the last stretch
+            const sk = new Path2D();
+            pLine(sk, 40, -3900, 40, -3990, r, 1.4); pLine(sk, 40, -3990, 76, -3990, r, 1.4);
+            pLine(sk, 76, -3990, 76, -3900, r, 1.4);
+            pCircle(sk, 58, -3996, 19, r, 1.6);
+            pLine(sk, 58, -4015, 58, -4034, r, 1);
+            decor.push({ p: sk, y0: -4060, y1: -3700, fill: '#fffdf6', line: '#5d6b7b', lw: 2 });
+        }
+
+        /* ------------------------- broad phase ------------------------- */
+        const BIN = 220, bins = new Map();
+        function buildBins() {
+            bins.clear();
+            for (const o of obs) {
+                if (o.ghost) continue;
+                const a = Math.floor((o.bb.y0 - 30) / BIN), b = Math.floor((o.bb.y1 + 30) / BIN);
+                for (let k = a; k <= b; k++) { if (!bins.has(k)) bins.set(k, []); bins.get(k).push(o); }
+            }
+        }
+        function near(y) { return bins.get(Math.floor(y / BIN)) || []; }
+
+        /* ------------------------- collision ------------------------- */
+        function contact(o, px, py, pr) {
+            if (o.t === 'c') {
+                let dx = px - o.x, dy = py - o.y, d = Math.hypot(dx, dy);
+                const R = o.r + pr; if (d >= R) return null;
+                if (d < 1e-6) { dx = 0; dy = -1; d = 1; }
+                return { nx: dx / d, ny: dy / d, depth: R - d, o };
+            }
+            if (o.t === 's') {
+                const dx = o.x2 - o.x1, dy = o.y2 - o.y1, L2 = dx * dx + dy * dy || 1;
+                let t = ((px - o.x1) * dx + (py - o.y1) * dy) / L2; t = t < 0 ? 0 : t > 1 ? 1 : t;
+                let ox = px - (o.x1 + dx * t), oy = py - (o.y1 + dy * t), d = Math.hypot(ox, oy);
+                const R = o.r + pr; if (d >= R) return null;
+                if (d < 1e-6) { ox = -dy; oy = dx; d = Math.hypot(ox, oy) || 1; }
+                return { nx: ox / d, ny: oy / d, depth: R - d, o };
+            }
+            const cx = Math.max(o.x, Math.min(px, o.x + o.w));
+            const cy = Math.max(o.y, Math.min(py, o.y + o.h));
+            let ox = px - cx, oy = py - cy, d = Math.hypot(ox, oy);
+            if (d > 1e-6) { if (d >= pr) return null; return { nx: ox / d, ny: oy / d, depth: pr - d, o }; }
+            const dl = px - o.x, dr = o.x + o.w - px, dt = py - o.y, db = o.y + o.h - py;
+            const m = Math.min(dl, dr, dt, db);
+            if (m === dt) return { nx: 0, ny: -1, depth: dt + pr, o };
+            if (m === db) return { nx: 0, ny: 1, depth: db + pr, o };
+            if (m === dl) return { nx: -1, ny: 0, depth: dl + pr, o };
+            return { nx: 1, ny: 0, depth: dr + pr, o };
+        }
+
+        function deepest(px, py, pr) {
+            let best = null;
+            for (const o of near(py)) {
+                if (px < o.bb.x0 - pr || px > o.bb.x1 + pr || py < o.bb.y0 - pr || py > o.bb.y1 + pr) continue;
+                const c = contact(o, px, py, pr);
+                if (c && (!best || c.depth > best.depth)) best = c;
+            }
+            return best;
+        }
+
+        /* ------------------------- player ------------------------- */
+        const P = {
+            x: W / 2, y: -1, vx: 0, vy: 0,
+            ang: -Math.PI / 2, len: POLE_LONG,
+            onTip: false, onBody: false, rest: 0, say: '', sayT: 0
+        };
+        let gripHeld = false;   // true = hands slid up the bamboo = short pole
+        let gripId = null;      // which pointer is holding the grip pad
+        const cam = { y: 0, shake: 0 };
+        // pointer is stored in SCREEN space and re-projected every frame, so the
+        // pole keeps aiming at the cursor while the camera scrolls
+        const aim = { sx: 0, sy: 0, ang: -Math.PI / 2, mode: 'pointer' };
+
+        let checkpoint = { x: W / 2, y: -1 };
+        let ropeOn = false, sound = true;
+        let time = 0, falls = 0, best = 0, won = false, started = false;
+        let lastRestY = 0, sinceContact = 0;
+
+        const CRY = ['আরে আরে!', 'গেল রে!', 'ও মা গো!', 'ইশ্‌!', 'আবার নিচে!', 'সর্বনাশ!'];
+        const PUSH = ['বিসমিল্লাহ্‌', 'হেইয়ো!', 'জোরে!', 'আরেকটু!'];
+
+        function reset(toCheckpoint) {
+            const s = toCheckpoint ? checkpoint : { x: W / 2, y: -1 };
+            P.x = s.x; P.y = s.y; P.vx = 0; P.vy = 0; P.ang = -Math.PI / 2; P.len = POLE_LONG;
+            stuckFor = 0; markX = P.x; markY = P.y; showStuck(false);
+            P.say = toCheckpoint ? 'দড়ি বাঁচালো!' : 'শুরু করি'; P.sayT = 110;
+            lastRestY = P.y;
+            if (!toCheckpoint) {
+                time = 0; falls = 0; won = false; topSec = 0; checkpoint = { x: W / 2, y: -1 };
+                veil.classList.remove('show');
+            }
+            cam.y = P.y - 120;
+        }
+
+        /* ------------------------- physics ------------------------- */
+        function step() {
+            if (won) return;
+            time += STEP;
+
+            if (aim.mode === 'pointer') {
+                const w = toWorld(aim.sx, aim.sy);
+                aim.ang = Math.atan2(w.y - P.y, w.x - P.x);
+            }
+
+            // Choking up on the pole is the way out of a tight spot: a short pole
+            // fits where a long one is jammed. It moves gradually so it cannot be
+            // used to catapult yourself.
+            const wantLen = gripHeld ? POLE_SHORT : POLE_LONG;
+            P.len += Math.max(-3.2, Math.min(3.2, wantLen - P.len));
+
+            const h = 1 / SUB;
+            for (let s = 0; s < SUB; s++) {
+                // 1. turn the pole toward the pointer, at a limited speed so the tip
+                //    can never jump straight through a ledge
+                let d = aim.ang - P.ang;
+                while (d < -Math.PI) d += Math.PI * 2;
+                while (d > Math.PI) d -= Math.PI * 2;
+                const lim = MAX_ROT * h;
+                P.ang += d < -lim ? -lim : d > lim ? lim : d;
+
+                const px0 = P.x, py0 = P.y;
+
+                // 2. gravity + move
+                P.vy += GRAV * h;
+                P.x += P.vx * h;
+                P.y += P.vy * h;
+
+                // 3. the pole is rigid: push the tip out of geometry and carry the body
+                let tipHit = null;
+                for (let it = 0; it < 3; it++) {
+                    const tx = P.x + Math.cos(P.ang) * P.len;
+                    const ty = P.y + Math.sin(P.ang) * P.len;
+                    const c = deepest(tx, ty, TIP_R);
+                    if (!c) break;
+                    const push = Math.min(c.depth, 22);
+                    P.x += c.nx * push; P.y += c.ny * push;
+                    tipHit = c;
+                }
+
+                // 4. the body itself cannot pass through anything either
+                let bodyHit = null;
+                for (let it = 0; it < 3; it++) {
+                    const c = deepest(P.x, P.y, BODY_R);
+                    if (!c) break;
+                    P.x += c.nx * c.depth; P.y += c.ny * c.depth;
+                    bodyHit = c;
+                }
+
+                // 5. read velocity back from how far the body really moved.
+                //    This is what turns a pole push into a genuine launch.
+                P.vx = (P.x - px0) / h;
+                P.vy = (P.y - py0) / h;
+                const sp = Math.hypot(P.vx, P.vy);
+                if (sp > MAX_SPD) { P.vx *= MAX_SPD / sp; P.vy *= MAX_SPD / sp; }
+
+                // 6. friction and a tiny bounce where the body touches
+                if (bodyHit) {
+                    const { nx, ny } = bodyHit;
+                    const vn = P.vx * nx + P.vy * ny;
+                    if (vn < 0) { P.vx -= vn * nx * 1.06; P.vy -= vn * ny * 1.06; }
+                    const tx = -ny, ty = nx;
+                    const vt = P.vx * tx + P.vy * ty;
+                    const keep = bodyHit.o.slip;
+                    P.vx += tx * (vt * keep - vt);
+                    P.vy += ty * (vt * keep - vt);
+                }
+
+                // 7. feedback
+                if (tipHit && !P.onTip) {
+                    const impact = Math.min(1, Math.hypot(P.vx, P.vy) / 16);
+                    sfx('tap', 0.18 + impact * 0.5);
+                    puff(P.x + Math.cos(P.ang) * P.len, P.y + Math.sin(P.ang) * P.len, 3 + impact * 5);
+                    if (impact > 0.55 && Math.random() < 0.25) say(PUSH[Math.random() * PUSH.length | 0], 60);
+                }
+                if (bodyHit && !P.onBody) {
+                    const hard = Math.abs(P.vy);
+                    if (hard > 4) { sfx('clang', Math.min(0.6, hard / 26)); cam.shake = Math.min(9, hard * 0.5); }
+                    puff(P.x, P.y + BODY_R, 2 + hard * 0.3);
+                }
+                P.onTip = !!tipHit;
+                P.onBody = !!bodyHit;
+            }
+
+            // watchdog: if you have barely moved while touching something, say so and
+            // offer a way out instead of leaving you to work out that you are wedged
+            if (++stuckTick >= 30) {
+                stuckTick = 0;
+                const moved = Math.hypot(P.x - markX, P.y - markY);
+                if (moved < 16 && P.onBody && !won) stuckFor += 0.5; else stuckFor = 0;
+                markX = P.x; markY = P.y;
+                showStuck(stuckFor >= 3);
+            }
+
+            // safety net: never leave the body buried in geometry (bad respawn, resize)
+            for (let it = 0; it < 4; it++) {
+                const c = deepest(P.x, P.y, BODY_R);
+                if (!c || c.depth < 0.5) break;
+                P.x += c.nx * c.depth; P.y += c.ny * c.depth;
+            }
+
+            // --- resting, falls, checkpoints ---
+            const slow = Math.hypot(P.vx, P.vy) < 1.1;
+            if (P.onBody && slow) P.rest++; else P.rest = 0;
+
+            if (P.rest === 10) {
+                const dropped = (P.y - lastRestY) / U_PER_M;
+                if (dropped > 4) {
+                    falls++;
+                    say(CRY[Math.random() * CRY.length | 0], 100);
+                    toastMsg(`নিচে ${dropped.toFixed(0)} m পড়েছো`);
+                }
+                lastRestY = P.y;
+            }
+
+            // safety rope: if it is on, a bad fall puts you back on the last checkpoint
+            if (ropeOn && !won && P.y > checkpoint.y + 640) {
+                reset(true); sfx('rope', .4);
+            }
+
+            // reaching a checkpoint ledge
+            if (P.onBody && P.rest > 4) {
+                const c = deepest(P.x, P.y + BODY_R + 3, 4);
+                if (c && c.o.check && c.o.cpY !== undefined && P.y < checkpoint.y - 40) {
+                    checkpoint = { x: c.o.cpX, y: c.o.cpY };
+                }
+            }
+
+            // metres
+            const m = Math.max(0, -P.y / U_PER_M);
+            if (m > best) best = m;
+            const sNow = secAt(P.y);
+            if (sNow > topSec) { topSec = sNow; showBanner(SEC[sNow]); }
+
+            if (P.y <= GOAL_Y && !won) win();
+
+            if (P.sayT > 0) P.sayT--;
+
+            // camera
+            const want = P.y - 60 + Math.max(-120, Math.min(160, P.vy * 7));
+            cam.y += (want - cam.y) * 0.12;
+            cam.shake *= 0.86;
+
+            stepPuffs();
+        }
+
+        let topSec = 0;
+        let stuckTick = 0, stuckFor = 0, markX = 0, markY = 0;
+
+        function nudge() {
+            // a small, honest hop — no teleport, no progress handed over
+            P.vy = -9.5;
+            P.vx += (P.x < W / 2 ? 3 : -3);
+            P.y -= 3;
+            stuckFor = 0; showStuck(false);
+            say('উফ্‌!', 60); sfx('rope', .3);
+        }
+        function say(t, d) { P.say = t; P.sayT = d; }
+
+        /* ------------------------- dust puffs ------------------------- */
+        const puffs = [];
+        function puff(x, y, n) {
+            n = Math.min(8, n | 0);
+            for (let i = 0; i < n; i++) puffs.push({
+                x, y, vx: (Math.random() - .5) * 2.4, vy: -Math.random() * 1.6,
+                r: 2 + Math.random() * 3, life: 1
+            });
+            while (puffs.length > 70) puffs.shift();
+        }
+        function stepPuffs() {
+            for (let i = puffs.length - 1; i >= 0; i--) {
+                const p = puffs[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.vx *= 0.94; p.life -= 0.035;
+                if (p.life <= 0) puffs.splice(i, 1);
+            }
+        }
+
+        /* ------------------------- audio ------------------------- */
+        let ac = null, lastSfx = 0;
+        function audioOn() {
+            if (!ac) { const A = window.AudioContext || window.webkitAudioContext; if (A) ac = new A(); }
+            if (ac && ac.state === 'suspended') ac.resume();
+        }
+        function tone(type, f0, f1, dur, vol) {
+            if (!sound || !ac) return;
+            const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+            o.type = type; o.frequency.setValueAtTime(f0, t);
+            o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+            g.gain.setValueAtTime(vol, t);
+            g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+            o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + 0.02);
+        }
+        function sfx(kind, v = 0.3) {
+            if (!sound) return; audioOn(); if (!ac) return;
+            const now = performance.now();
+            if (kind !== 'win' && now - lastSfx < 45) return;
+            lastSfx = now;
+            if (kind === 'tap') tone('triangle', 210, 60, 0.07, v * 0.5);
+            if (kind === 'clang') tone('sine', 340, 110, 0.13, v * 0.6);
+            if (kind === 'rope') tone('sine', 420, 700, 0.18, 0.25);
+            if (kind === 'win') [262, 330, 392, 523, 659].forEach((f, i) => setTimeout(() => tone('triangle', f, f, 0.28, 0.26), i * 110));
+        }
+
+        /* ------------------------- rendering ------------------------- */
+        function draw() {
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, cssW, cssH);
+
+            const sx = (Math.random() - .5) * cam.shake, sy = (Math.random() - .5) * cam.shake;
+            const ox = cssW / 2 + sx, oy = cssH * 0.60 + sy;
+
+            // visible world rectangle
+            const halfW = (cssW / 2) / scale, halfTop = (oy) / scale, halfBot = (cssH - oy) / scale;
+            const vL = W / 2 - halfW, vR = W / 2 + halfW;
+            const vT = cam.y - halfTop, vB = cam.y + halfBot;
+
+            ctx.save();
+            ctx.translate(ox, oy); ctx.scale(scale, scale); ctx.translate(-W / 2, -cam.y);
+
+            paper(vL, vR, vT, vB);
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+            // decor behind the level
+            for (const d of decor) {
+                if (d.y1 < vT || d.y0 > vB) continue;
+                if (d.fill) { ctx.fillStyle = d.fill; ctx.fill(d.p); }
+                ctx.strokeStyle = d.line; ctx.lineWidth = d.lw; ctx.stroke(d.p);
+            }
+
+            sectionMarks(vT, vB, vL);
+            bestLine(vL, vR);
+
+            // obstacles (culled). Font sizes are divided by scale so text stays the
+            // same size on screen whether we are on a phone or a wide monitor.
+            const fp = n => (n / scale).toFixed(1) + 'px Caveat, cursive';
+            ctx.font = fp(14);
+            for (const o of obs) {
+                if (o.bb.y1 < vT || o.bb.y0 > vB || o.bb.x1 < vL || o.bb.x0 > vR) continue;
+                const m = MAT[o.mat];
+                ctx.fillStyle = m.fill; ctx.fill(o.path);
+                ctx.strokeStyle = m.line; ctx.lineWidth = o.mat === 'wall' ? 1.4 : 2.2; ctx.stroke(o.path);
+                if (o.mat !== 'wall') {
+                    ctx.save(); ctx.globalAlpha = 0.4;
+                    ctx.strokeStyle = m.line; ctx.lineWidth = 1.1; ctx.stroke(o.mark); ctx.restore();
+                }
+                if (o.check) {
+                    ctx.fillStyle = ropeOn ? '#0b7a5f' : 'rgba(11,122,95,.28)';
+                    ctx.font = fp(16);
+                    ctx.fillText('🪢', (o.bb.x0 + o.bb.x1) / 2 - 8, o.bb.y0 - 9);
+                    ctx.font = fp(14);
+                }
+            }
+
+            for (const p of puffs) {
+                ctx.globalAlpha = p.life * 0.5;
+                ctx.fillStyle = '#8b98a8';
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+            drawPlayer();
+            ctx.restore();
+        }
+
+        function paper(vL, vR, vT, vB) {
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#c9d8e8';
+            ctx.beginPath();
+            const first = Math.ceil(vT / 28) * 28;
+            for (let y = first; y < vB; y += 28) { ctx.moveTo(vL, y); ctx.lineTo(vR, y); }
+            ctx.stroke();
+            // red margin, pinned to the left of the visible page
+            ctx.strokeStyle = '#e39a9a'; ctx.lineWidth = 1.6;
+            ctx.beginPath();
+            const mx = vL + 40 / scale;
+            ctx.moveTo(mx, vT); ctx.lineTo(mx, vB); ctx.stroke();
+        }
+
+        function sectionMarks(vT, vB, vL) {
+            ctx.font = (18 / scale).toFixed(1) + 'px Caveat, cursive';
+            for (let i = 0; i < SEC.length; i++) {
+                const y = SEC[i].top;
+                if (y > vT && y < vB) {
+                    ctx.strokeStyle = 'rgba(93,107,123,.30)'; ctx.lineWidth = 1.4;
+                    ctx.setLineDash([7, 7]); ctx.beginPath();
+                    ctx.moveTo(vL + 60 / scale, y); ctx.lineTo(W + 40, y); ctx.stroke(); ctx.setLineDash([]);
+                    ctx.fillStyle = 'rgba(93,107,123,.75)';
+                    ctx.fillText(SEC[i + 1] ? SEC[i + 1].en : '', vL + 66 / scale, y - 7);
+                }
+            }
+        }
+
+        function bestLine(vL, vR) {
+            const y = -best * U_PER_M;
+            if (y > cam.y + 900 || y < cam.y - 900 || best < 3) return;
+            ctx.strokeStyle = 'rgba(179,38,30,.55)'; ctx.lineWidth = 1.6;
+            ctx.setLineDash([4, 6]); ctx.beginPath();
+            ctx.moveTo(vL + 60 / scale, y); ctx.lineTo(vR, y); ctx.stroke(); ctx.setLineDash([]);
+            ctx.fillStyle = 'rgba(179,38,30,.75)'; ctx.font = (16 / scale).toFixed(1) + 'px Caveat, cursive';
+            ctx.fillText('best', vL + 66 / scale, y - 5);
+        }
+
+        /* live-drawn character: jitter comes from a lookup table, refreshed every
+           6 frames so the ink "boils" like a flip-book without costing anything  */
+        let frame = 0;
+        function wob(x1, y1, x2, y2, w, col, seed) {
+            const dx = x2 - x1, dy = y2 - y1, d = Math.hypot(dx, dy) || 1;
+            const n = Math.max(2, Math.round(d / 14)), nx = -dy / d, ny = dx / d;
+            ctx.beginPath(); ctx.moveTo(x1, y1);
+            for (let i = 1; i < n; i++) {
+                const t = i / n, o = jit(seed + i * 7) * 3;
+                ctx.lineTo(x1 + dx * t + nx * o, y1 + dy * t + ny * o);
+            }
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = col; ctx.lineWidth = w; ctx.stroke();
+        }
+        function wobCircle(cx, cy, r, fill, col, w, seed) {
+            const n = Math.max(14, r | 0);
+            ctx.beginPath();
+            for (let i = 0; i <= n; i++) {
+                const a = i / n * 6.283, rr = r + jit(seed + i * 5) * 2.4;
+                const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr;
+                i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+            }
+            ctx.closePath();
+            if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+            if (col) { ctx.strokeStyle = col; ctx.lineWidth = w; ctx.stroke(); }
+        }
+
+        function drawPlayer() {
+            const s = (frame / 6 | 0) * 11;
+            const x = P.x, y = P.y, a = P.ang;
+            const tipX = x + Math.cos(a) * P.len, tipY = y + Math.sin(a) * P.len;
+            const backX = x - Math.cos(a) * 22, backY = y - Math.sin(a) * 22;
+
+            // the pot (হাঁড়ি)
+            wobCircle(x, y + 3, BODY_R, '#e6ecf2', '#20272f', 2.6, s);
+            wob(x - BODY_R - 6, y - 4, x + BODY_R + 6, y - 4, 3, '#20272f', s + 40);
+            wobCircle(x - BODY_R - 6, y, 4.5, null, '#20272f', 2, s + 60);
+            wobCircle(x + BODY_R + 6, y, 4.5, null, '#20272f', 2, s + 70);
+
+            // body + head
+            const hx = x, hy = y - 25;
+            wob(x, y - 12, x, y + 6, 2.6, '#20272f', s + 80);
+            wobCircle(hx, hy, 13, '#fffdf6', '#20272f', 2.2, s + 90);
+
+            // gamcha
+            ctx.save(); ctx.beginPath();
+            ctx.arc(hx, hy, 14, Math.PI * 1.08, Math.PI * 1.92);
+            ctx.strokeStyle = '#b3261e'; ctx.lineWidth = 6; ctx.stroke(); ctx.restore();
+            wob(hx + 11, hy - 6, hx + 21, hy + 4, 3, '#b3261e', s + 100);
+
+            // face reacts to what is happening
+            ctx.fillStyle = '#20272f';
+            const scared = P.vy > 9;
+            ctx.beginPath(); ctx.arc(hx - 4.5, hy - 2, 1.9, 0, 6.283); ctx.fill();
+            ctx.beginPath(); ctx.arc(hx + 4.5, hy - 2, 1.9, 0, 6.283); ctx.fill();
+            if (scared) { ctx.beginPath(); ctx.arc(hx, hy + 5, 3.6, 0, 6.283); ctx.fill(); }
+            else wob(hx - 4.5, hy + 4, hx + 4.5, hy + 4, 2, '#20272f', s + 110);
+
+            // arms to the grip
+            const gx = x + Math.cos(a) * 17, gy = (y - 13) + Math.sin(a) * 17;
+            wob(hx - 6, y - 12, gx, gy, 2, '#20272f', s + 120);
+            wob(hx + 6, y - 12, gx, gy, 2, '#20272f', s + 130);
+
+            // the bamboo
+            wob(backX, backY, tipX, tipY, 6, '#d8a020', s + 140);
+            wob(backX, backY, tipX, tipY, 2.2, '#20272f', s + 150);
+            for (let f = 0.22; f < 0.95; f += 0.26) {
+                const nx = backX + (tipX - backX) * f, ny = backY + (tipY - backY) * f;
+                wobCircle(nx, ny, 3.2, '#7a4a08', '#20272f', 1.2, s + 160 + f * 100);
+            }
+            wobCircle(tipX, tipY, TIP_R * 0.8, '#20272f', null, 0, s + 180);
+
+            // speech
+            if (P.sayT > 0) {
+                ctx.font = 'bold 17px Caveat, cursive';
+                const w = ctx.measureText(P.say).width + 16;
+                const bx = hx + 16, by = hy - 46;
+                ctx.fillStyle = '#fffdf6';
+                ctx.strokeStyle = '#20272f'; ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                if (ctx.roundRect) ctx.roundRect(bx, by, w, 25, 8); else ctx.rect(bx, by, w, 25);
+                ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(bx + 6, by + 24); ctx.lineTo(bx, by + 34); ctx.lineTo(bx + 16, by + 25);
+                ctx.fillStyle = '#fffdf6'; ctx.fill(); ctx.strokeStyle = '#20272f'; ctx.stroke();
+                ctx.fillStyle = '#20272f'; ctx.fillText(P.say, bx + 8, by + 18);
+            }
+        }
+
+        /* ------------------------- HUD ------------------------- */
+        const $ = id => document.getElementById(id);
+        const elH = $('h'), elBest = $('best'), elFalls = $('falls'), elClock = $('clock'),
+            elPlace = $('place'), elFill = $('fill'), elBestLine = $('bestline'),
+            veil = $('veil'), toastEl = $('toast'), bannerEl = $('banner'), hint = $('hint'),
+            stuckbox = $('stuckbox');
+
+        let toastT = 0, bannerT = 0;
+        function toastMsg(t) { toastEl.textContent = t; toastEl.classList.add('show'); toastT = 110; }
+        function showBanner(s) {
+            bannerEl.innerHTML = `${s.bn}<small>${s.en}</small>`;
+            bannerEl.classList.add('show'); bannerT = 100;
+        }
+
+        function hud() {
+            const m = Math.max(0, -P.y / U_PER_M);
+            elH.innerHTML = `${m.toFixed(0)}<span>m</span>`;
+            elBest.textContent = `${best.toFixed(0)}m`;
+            elFalls.textContent = falls;
+            const mm = time / 60 | 0, ss = (time % 60) | 0;
+            elClock.textContent = `${mm}:${ss < 10 ? '0' : ''}${ss}`;
+            elPlace.textContent = SEC[secAt(P.y)].bn;
+            const pct = Math.max(0, Math.min(100, m / ((-GOAL_Y) / U_PER_M) * 100));
+            elFill.style.height = pct + '%';
+            elBestLine.style.bottom = Math.min(100, best / ((-GOAL_Y) / U_PER_M) * 100) + '%';
+
+            if (toastT > 0 && --toastT === 0) toastEl.classList.remove('show');
+            if (bannerT > 0 && --bannerT === 0) bannerEl.classList.remove('show');
+        }
+
+        function win() {
+            won = true; sfx('win');
+            $('wT').textContent = elClock.textContent;
+            $('wF').textContent = falls;
+            $('wM').textContent = best.toFixed(0) + 'm';
+            veil.classList.add('show');
+        }
+
+        /* ------------------------- input ------------------------- */
+        function toWorld(cx, cy) {
+            return {
+                x: (cx - cssW / 2) / scale + W / 2,
+                y: (cy - cssH * 0.60) / scale + cam.y
+            };
+        }
+        function point(cx, cy) {
+            aim.sx = cx; aim.sy = cy; aim.mode = 'pointer';
+        }
+        aim.sx = window.innerWidth / 2; aim.sy = window.innerHeight * 0.28;
+
+        // The finger (or click) holding the grip pad must not also steer the pole,
+        // and lifting the aiming finger must not release a grip the other thumb
+        // is still holding — so the grip remembers which pointer owns it.
+        addEventListener('pointermove', e => {
+            if (gripId !== null && e.pointerId === gripId) return;
+            point(e.clientX, e.clientY);
+        }, { passive: true });
+        addEventListener('pointerdown', e => {
+            audioOn(); started = true; hideHint();
+            if (e.target !== cv) return;
+            point(e.clientX, e.clientY);
+            if (e.pointerType === 'mouse' && e.button === 0) grabGrip(e.pointerId);
+        }, { passive: true });
+        addEventListener('touchmove', e => { if (e.target === cv) e.preventDefault(); }, { passive: false });
+
+        // keyboard fallback so it is playable without a mouse
+        const keys = {};
+        addEventListener('keydown', e => {
+            keys[e.key] = true;
+            if (e.key === ' ') grabGrip('key');
+            if (e.key === 'r' || e.key === 'R') reset(false);
+            if ([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) e.preventDefault();
+        });
+        addEventListener('keyup', e => { keys[e.key] = false; if (e.key === ' ') releaseGrip('key'); });
+        function keyAim() {
+            let t = 0;
+            if (keys.ArrowLeft || keys.a || keys.A) t -= 1;
+            if (keys.ArrowRight || keys.d || keys.D) t += 1;
+            if (t) { aim.mode = 'key'; aim.ang += t * 0.06; hideHint(); }
+        }
+
+        function hideHint() { hint.style.opacity = '0'; setTimeout(() => hint.style.display = 'none', 500); }
+        function showStuck(on) { stuckbox.classList.toggle('show', !!on); }
+
+        const gripBtn = $('grip');
+        const gripThumb = $('grip-thumb');
+        function setGrip(on) {
+            gripHeld = on;
+            gripBtn.classList.toggle('on', on);
+            if (gripThumb) gripThumb.classList.toggle('on', on);
+        }
+        function grabGrip(id) { gripId = id; setGrip(true); }
+        function releaseGrip(id) {
+            if (gripId === null || id === undefined || id === gripId) { gripId = null; setGrip(false); }
+        }
+        gripBtn.addEventListener('pointerdown', e => { e.preventDefault(); grabGrip(e.pointerId); });
+        if (gripThumb) gripThumb.addEventListener('pointerdown', e => { e.preventDefault(); grabGrip(e.pointerId); });
+        addEventListener('pointerup', e => releaseGrip(e.pointerId));
+        addEventListener('pointercancel', e => releaseGrip(e.pointerId));
+        $('nudge').addEventListener('click', nudge);
+        $('hintX').addEventListener('click', hideHint);
+        $('snd').addEventListener('click', e => {
+            sound = !sound; audioOn();
+            e.currentTarget.textContent = sound ? '🔈' : '🔇';
+            e.currentTarget.classList.toggle('off', !sound);
+        });
+        $('rope').addEventListener('click', e => {
+            ropeOn = !ropeOn;
+            e.currentTarget.classList.toggle('off', !ropeOn);
+            toastMsg(ropeOn ? 'Safety rope on' : 'Safety rope off');
+        });
+        $('rope').classList.add('off');
+        $('rst').addEventListener('click', () => reset(false));
+        $('again').addEventListener('click', () => reset(false));
+
+        /* ------------------------- loop ------------------------- */
+        let acc = 0, last = performance.now();
+        document.addEventListener('visibilitychange', () => { last = performance.now(); acc = 0; });
+
+        function loop(now) {
+            let dt = (now - last) / 1000; last = now;
+            if (dt > 0.25) dt = 0.25;
+            acc += dt;
+            let guard = 0;
+            while (acc >= STEP && guard++ < 5) { keyAim(); step(); acc -= STEP; }
+            frame++;
+            draw();
+            hud();
+            requestAnimationFrame(loop);
+        }
+
+        /* ------------------------- go ------------------------- */
+        buildLevel();
+        bake();
+        // checkpoint anchors: work them out after baking, from each marked ledge
+        for (const o of obs) if (o.check) { o.cpX = (o.bb.x0 + o.bb.x1) / 2; o.cpY = o.bb.y0 - BODY_R - 2; }
+        buildDecor();
+        buildBins();
+        reset(false);
+        requestAnimationFrame(loop);
+    </script>
+</body>
+
+</html>

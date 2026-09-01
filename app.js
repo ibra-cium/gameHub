@@ -38,6 +38,16 @@ const GAMES_DATABASE = [
     featured: true
   },
   {
+    id: "climb",
+    title: "বাঁশ Climber: Dhaka Rooftops",
+    description: "Master physics-driven pole vaulting over Dhaka's iconic rooftops, water tanks, tin sheds, and bamboo scaffolding in this challenging climbing adventure.",
+    category: "platformer",
+    players: "1 Player",
+    path: "climb/index.html",
+    thumbnail: "climb/climb_cover.png",
+    featured: true
+  },
+  {
     id: "tiny-goal",
     title: "Tiny Goalkeeper",
     description: "Step into the boots of an elite goalkeeper in this arcade sports game built with Godot. Defend the goal against penalty kicks, predict strike trajectories, make diving saves, and secure clean sheets.",
