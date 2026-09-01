@@ -38,6 +38,16 @@ const GAMES_DATABASE = [
     featured: true
   },
   {
+    id: "tiny-goal",
+    title: "Tiny Goalkeeper",
+    description: "Step into the boots of an elite goalkeeper in this arcade sports game built with Godot. Defend the goal against penalty kicks, predict strike trajectories, make diving saves, and secure clean sheets.",
+    category: "sports",
+    players: "1 Player",
+    path: "tiny_goal/index.html",
+    thumbnail: "tiny_goal/index.png",
+    featured: true
+  },
+  {
     id: "rickshaw-rush",
     title: "Rickshaw Rush: Streets of Dhaka",
     description: "Navigate the busy streets of Dhaka in your rickshaw. Dodge traffic and transport passengers in this arcade game built with Godot.",
