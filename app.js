@@ -8,6 +8,16 @@
 
 const GAMES_DATABASE = [
   {
+    id: "knight-rush",
+    title: "Knight Rush",
+    description: "Charge through high-speed obstacle courses, leap over perilous hazards, and sprint to glory in this action-packed 3D knight runner built with Godot.",
+    category: "action",
+    players: "1 Player",
+    path: "KinghtRush/KnightRush.html",
+    thumbnail: "KinghtRush/knight_rush_cover.png",
+    featured: true
+  },
+  {
     id: "immune",
     title: "IMMUNE",
     description: "Defend the human body across 100 microscopic levels with soft-body physics, procedural fluid rendering, and adaptive cellular mutations.",
